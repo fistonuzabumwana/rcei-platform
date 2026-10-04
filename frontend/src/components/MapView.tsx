@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { DistrictMetric } from '../services/api'
 
