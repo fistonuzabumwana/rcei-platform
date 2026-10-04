@@ -26,8 +26,8 @@ By aggregating and processing thousands of household records, our engine provide
 ## ⚙️ Tech Stack
 * **Data Engine:** Python, Pandas, GeoPandas (Direct extraction from Stata `.dta` files)
 * **Backend:** FastAPI (High-performance API)
-* **Frontend:** React, TypeScript, Vite, Tailwind CSS v4
-* **Mapping:** Leaflet & React-Leaflet (OpenStreetMap)
+* **Frontend:** React, TypeScript, Vite, Tailwind CSS v4.
+* **Mapping:** Leaflet & React-Leaflet (OpenStreetMap).
 
 ---
 
