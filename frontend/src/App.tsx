@@ -9,6 +9,7 @@ import Simulator from './components/Simulator'
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     fetchDistrictMetrics().then(data => {
@@ -16,9 +17,32 @@ function App() {
       setLoading(false)
     }).catch(err => {
       console.error(err)
+      setError(true)
       setLoading(false)
     })
   }, [])
+
+  // Calculate dynamic stats
+  let avgBiomass = 0;
+  let avgClean = 0;
+  
+  if (metrics) {
+    const districts = Object.values(metrics);
+    let totalHouseholds = 0;
+    let totalBiomass = 0;
+    let totalClean = 0;
+    
+    districts.forEach(d => {
+      totalHouseholds += d.estimated_households;
+      totalBiomass += (d.biomass_reliance_rate / 100) * d.estimated_households;
+      totalClean += (d.clean_energy_rate / 100) * d.estimated_households;
+    });
+
+    if (totalHouseholds > 0) {
+      avgBiomass = (totalBiomass / totalHouseholds) * 100;
+      avgClean = (totalClean / totalHouseholds) * 100;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">
@@ -30,9 +54,11 @@ function App() {
           <p className="mt-2 text-slate-500">NST2 Decision Platform & Policy Simulator</p>
         </div>
         <div className="flex space-x-4">
-          <div className="glass-panel px-4 py-2 flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-sm font-medium text-slate-700">API Connected</span>
+          <div className={`glass-panel px-4 py-2 flex items-center space-x-2 ${error ? 'bg-red-50 border-red-100' : ''}`}>
+            <div className={`w-3 h-3 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+            <span className={`text-sm font-medium ${error ? 'text-red-700' : 'text-slate-700'}`}>
+              {loading ? 'Connecting...' : error ? 'API Disconnected' : 'API Connected'}
+            </span>
           </div>
         </div>
       </header>
@@ -48,8 +74,8 @@ function App() {
               <h3 className="font-semibold text-slate-700">Highest Biomass Reliance</h3>
               <Flame className="text-rose-500" />
             </div>
-            <p className="text-3xl font-bold text-slate-900">92.4%</p>
-            <p className="text-sm text-slate-500 mt-2">National Average: ~79%</p>
+            <p className="text-3xl font-bold text-slate-900">{metrics ? avgBiomass.toFixed(1) + '%' : '--%'}</p>
+            <p className="text-sm text-slate-500 mt-2">National Average (Weighted)</p>
           </div>
           
           <div className="glass-panel p-6 hover-lift border-t-4 border-t-brand-500">
@@ -57,7 +83,7 @@ function App() {
               <h3 className="font-semibold text-slate-700">Clean Energy Adoption</h3>
               <Zap className="text-brand-500" />
             </div>
-            <p className="text-3xl font-bold text-slate-900">20.8%</p>
+            <p className="text-3xl font-bold text-slate-900">{metrics ? avgClean.toFixed(1) + '%' : '--%'}</p>
             <p className="text-sm text-slate-500 mt-2">NST2 Target: 100% by 2030</p>
           </div>
 
