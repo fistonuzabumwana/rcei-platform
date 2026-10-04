@@ -12,9 +12,14 @@ def process_eicv():
     
     # s5cq22a = primary cooking fuel
     # 1=Firewood, 2=Charcoal, 3=Crop waste, 4=Biogas, 5=LPG, 6=Electricity
-    # We treat 1, 2, 3 as Biomass. 4, 5, 6 as Clean.
-    df_hh['is_biomass'] = df_hh['s5cq22a'].isin([1, 2, 3]).astype(int)
-    df_hh['is_clean'] = df_hh['s5cq22a'].isin([4, 5, 6]).astype(int)
+    # s5cq22a = primary cooking fuel
+    # Biomass codes: 1=Firewood, 2=Charcoal, 13=Straw/grass, 8=Crop waste, 12=Saw Dust, 4=Peat
+    # Clean codes: 3=Gas, 10=Briquette, 6=Biogas, 11=Electricity, 7=Oil/kerosene
+    biomass_codes = [1, 2, 13, 8, 12, 4]
+    clean_codes = [3, 10, 6, 11, 7]
+    
+    df_hh['is_biomass'] = df_hh['s5cq22a'].isin(biomass_codes).astype(int)
+    df_hh['is_clean'] = df_hh['s5cq22a'].isin(clean_codes).astype(int)
     
     weight_col = 'weight'
     
