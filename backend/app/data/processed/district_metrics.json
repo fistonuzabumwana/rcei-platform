@@ -2,181 +2,211 @@
   "11": {
     "biomass_reliance_rate": 73.25,
     "clean_energy_rate": 22.57,
+    "poverty_rate": 5.32,
     "estimated_households": 106746,
-    "transition_priority_score": 74.5
+    "transition_priority_score": 39.3
   },
   "12": {
     "biomass_reliance_rate": 78.55,
     "clean_energy_rate": 20.5,
+    "poverty_rate": 8.37,
     "estimated_households": 252223,
-    "transition_priority_score": 78.8
+    "transition_priority_score": 43.5
   },
   "13": {
     "biomass_reliance_rate": 69.44,
     "clean_energy_rate": 27.86,
+    "poverty_rate": 5.92,
     "estimated_households": 133947,
-    "transition_priority_score": 70.3
+    "transition_priority_score": 37.7
   },
   "21": {
     "biomass_reliance_rate": 98.92,
     "clean_energy_rate": 0.88,
+    "poverty_rate": 39.33,
     "estimated_households": 91599,
-    "transition_priority_score": 99.0
+    "transition_priority_score": 69.1
   },
   "22": {
     "biomass_reliance_rate": 99.8,
     "clean_energy_rate": 0.2,
+    "poverty_rate": 39.7,
     "estimated_households": 97988,
-    "transition_priority_score": 99.8
+    "transition_priority_score": 69.7
   },
   "23": {
     "biomass_reliance_rate": 99.38,
     "clean_energy_rate": 0.4,
+    "poverty_rate": 37.83,
     "estimated_households": 73600,
-    "transition_priority_score": 99.4
+    "transition_priority_score": 68.6
   },
   "24": {
     "biomass_reliance_rate": 94.41,
     "clean_energy_rate": 4.8,
+    "poverty_rate": 20.09,
     "estimated_households": 93858,
-    "transition_priority_score": 94.6
+    "transition_priority_score": 57.2
   },
   "25": {
     "biomass_reliance_rate": 99.71,
     "clean_energy_rate": 0.29,
+    "poverty_rate": 44.07,
     "estimated_households": 91203,
-    "transition_priority_score": 99.7
+    "transition_priority_score": 71.9
   },
   "26": {
     "biomass_reliance_rate": 97.45,
     "clean_energy_rate": 1.68,
+    "poverty_rate": 12.78,
     "estimated_households": 92396,
-    "transition_priority_score": 97.7
+    "transition_priority_score": 55.1
   },
   "27": {
     "biomass_reliance_rate": 95.65,
     "clean_energy_rate": 3.95,
+    "poverty_rate": 12.89,
     "estimated_households": 91552,
-    "transition_priority_score": 95.8
+    "transition_priority_score": 54.3
   },
   "28": {
     "biomass_reliance_rate": 96.79,
     "clean_energy_rate": 2.61,
+    "poverty_rate": 36.38,
     "estimated_households": 115303,
-    "transition_priority_score": 97.0
+    "transition_priority_score": 66.6
   },
   "31": {
     "biomass_reliance_rate": 98.2,
     "clean_energy_rate": 1.62,
+    "poverty_rate": 34.38,
     "estimated_households": 87888,
-    "transition_priority_score": 98.3
+    "transition_priority_score": 66.3
   },
   "32": {
     "biomass_reliance_rate": 99.57,
     "clean_energy_rate": 0.43,
+    "poverty_rate": 37.15,
     "estimated_households": 83760,
-    "transition_priority_score": 99.6
+    "transition_priority_score": 68.4
   },
   "33": {
     "biomass_reliance_rate": 93.39,
     "clean_energy_rate": 5.82,
+    "poverty_rate": 34.29,
     "estimated_households": 123578,
-    "transition_priority_score": 93.6
+    "transition_priority_score": 63.8
   },
   "34": {
     "biomass_reliance_rate": 99.35,
     "clean_energy_rate": 0.44,
+    "poverty_rate": 17.03,
     "estimated_households": 75622,
-    "transition_priority_score": 99.4
+    "transition_priority_score": 58.2
   },
   "35": {
     "biomass_reliance_rate": 99.79,
     "clean_energy_rate": 0.21,
+    "poverty_rate": 24.66,
     "estimated_households": 90037,
-    "transition_priority_score": 99.8
+    "transition_priority_score": 62.2
   },
   "36": {
     "biomass_reliance_rate": 95.64,
     "clean_energy_rate": 3.94,
+    "poverty_rate": 37.46,
     "estimated_households": 105279,
-    "transition_priority_score": 95.8
+    "transition_priority_score": 66.5
   },
   "37": {
     "biomass_reliance_rate": 98.88,
     "clean_energy_rate": 0.91,
+    "poverty_rate": 38.63,
     "estimated_households": 96599,
-    "transition_priority_score": 98.9
+    "transition_priority_score": 68.8
   },
   "41": {
     "biomass_reliance_rate": 97.81,
     "clean_energy_rate": 2.19,
+    "poverty_rate": 19.19,
     "estimated_households": 91461,
-    "transition_priority_score": 97.8
+    "transition_priority_score": 58.5
   },
   "42": {
     "biomass_reliance_rate": 98.71,
     "clean_energy_rate": 0.89,
+    "poverty_rate": 20.72,
     "estimated_households": 94150,
-    "transition_priority_score": 98.8
+    "transition_priority_score": 59.7
   },
   "43": {
     "biomass_reliance_rate": 94.02,
     "clean_energy_rate": 5.77,
+    "poverty_rate": 17.56,
     "estimated_households": 120172,
-    "transition_priority_score": 94.1
+    "transition_priority_score": 55.8
   },
   "44": {
     "biomass_reliance_rate": 99.12,
     "clean_energy_rate": 0.24,
+    "poverty_rate": 19.71,
     "estimated_households": 90741,
-    "transition_priority_score": 99.3
+    "transition_priority_score": 59.4
   },
   "45": {
     "biomass_reliance_rate": 98.5,
     "clean_energy_rate": 1.32,
+    "poverty_rate": 10.45,
     "estimated_households": 110114,
-    "transition_priority_score": 98.6
+    "transition_priority_score": 54.5
   },
   "51": {
     "biomass_reliance_rate": 93.76,
     "clean_energy_rate": 5.62,
+    "poverty_rate": 19.58,
     "estimated_households": 127225,
-    "transition_priority_score": 93.9
+    "transition_priority_score": 56.7
   },
   "52": {
     "biomass_reliance_rate": 98.55,
     "clean_energy_rate": 1.13,
+    "poverty_rate": 33.57,
     "estimated_households": 154897,
-    "transition_priority_score": 98.6
+    "transition_priority_score": 66.1
   },
   "53": {
     "biomass_reliance_rate": 98.11,
     "clean_energy_rate": 1.7,
+    "poverty_rate": 15.31,
     "estimated_households": 129378,
-    "transition_priority_score": 98.2
+    "transition_priority_score": 56.7
   },
   "54": {
     "biomass_reliance_rate": 98.31,
     "clean_energy_rate": 1.31,
+    "poverty_rate": 31.31,
     "estimated_households": 122477,
-    "transition_priority_score": 98.4
+    "transition_priority_score": 64.8
   },
   "55": {
     "biomass_reliance_rate": 98.28,
     "clean_energy_rate": 1.38,
+    "poverty_rate": 11.95,
     "estimated_households": 105889,
-    "transition_priority_score": 98.4
+    "transition_priority_score": 55.1
   },
   "56": {
     "biomass_reliance_rate": 97.9,
     "clean_energy_rate": 2.1,
+    "poverty_rate": 26.8,
     "estimated_households": 101843,
-    "transition_priority_score": 97.9
+    "transition_priority_score": 62.4
   },
   "57": {
     "biomass_reliance_rate": 92.59,
     "clean_energy_rate": 6.23,
+    "poverty_rate": 20.75,
     "estimated_households": 138280,
-    "transition_priority_score": 92.9
+    "transition_priority_score": 56.7
   }
 }

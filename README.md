@@ -1,89 +1,78 @@
-# 🌍 Rwanda CleanEnergy Insights (RCEI)
-**NISR Big Data Hackathon 2026 - Track 3 (Open Innovation)**
+# Rwanda CleanEnergy Insights 🌍⚡
 
-![Dashboard Preview](asset/image/dashboard%20view.PNG)
+**NST2 Decision Platform & Policy Simulator**
 
-## 📌 The Problem
-Under the National Strategy for Transformation (NST2), Rwanda has set ambitious targets to achieve 100% clean cooking energy access by 2030, drastically reducing the traditional reliance on biomass (firewood and charcoal). However, policymakers lack real-time, spatial tools to visualize current reliance rates at a granular level and simulate the exact impact of financial interventions (like subsidies). 
+Welcome to the **Rwanda CleanEnergy Insights** platform, an advanced data-driven web application built for the **2026 NISR Big Data Hackathon (Track 3: Open Innovation)**. 
 
-## 💡 Our Solution
-**Rwanda CleanEnergy Insights (RCEI)** is a dynamic, data-driven Decision Support Platform built directly on top of the **NISR EICV7 (Integrated Household Living Conditions Survey 2023-2024) microdata**. 
+This platform empowers policymakers, planners, and stakeholders to track Rwanda's progress toward the National Strategy for Transformation (NST2) goal of achieving **100% clean cooking energy by 2030**. 
 
-By aggregating and processing thousands of household records, our engine provides:
-1. **Spatial Intelligence:** A choropleth map highlighting districts with critical biomass dependency.
-2. **Policy Simulation:** An interactive "What-If" engine that allows government planners to model the elasticity of LPG/Stove subsidies, instantly calculating projected household conversions and tons of charcoal saved annually.
+### 🚀 Live Demo
+- **Frontend (Live):** [https://rwanda-cleanenergy-insights-nisr.fistonuz.me](https://rwanda-cleanenergy-insights-nisr.fistonuz.me)
+- **Backend API (To be deployed on Render):** Will update shortly
 
 ---
 
-## 🏆 Why This Project Wins (Hackathon Alignment)
-* **Data-Driven Policy:** Instead of static reports, this platform turns raw NISR `.dta` microdata into an interactive policy tool. It aligns perfectly with the **Open Innovation** track by extracting maximum public value from the EICV7 dataset.
-* **NST2 Alignment:** Directly addresses one of Rwanda's most critical environmental and health targets (Clean Cooking).
-* **Modern Architecture:** A highly scalable Python FastAPI backend paired with a blazing-fast React/Tailwind (Vite) frontend. 
-* **Real-World Viability:** The simulator uses real weighted household data (`weight` variable in EICV7) to ensure projections represent true population estimates.
+## 🎯 The Problem & Our Solution
+Rwanda currently faces a high reliance on biomass (firewood and charcoal) for cooking, which causes severe deforestation, indoor air pollution, and health complications. Under NST2 and Vision 2050, the government aims to eradicate this reliance entirely.
+
+**Our Solution:**
+We built a real-time web platform that processes raw microdata from the NISR EICV7 survey to map current biomass reliance across all 30 Rwandan districts. 
+
+### ✨ Core Features
+1. **Interactive District Map**: Instantly visualize biomass reliance vs. clean energy adoption across the entire nation with pinpoint accurate district coordinates.
+2. **Policy Simulator (Budget Estimator)**: Slide to apply government subsidies to LPG/Clean Fuel kits. The system calculates how many households will transition, how many tons of charcoal are saved, and the **Estimated Government Budget required in Rwf**.
+3. **Live Map Projection**: Running a simulation dynamically feeds data back into the interactive map. Watch district colors shift in real-time as your simulated policies lift them out of critical biomass reliance.
+4. **Poverty-Weighted Elasticity Model**: Our simulator isn't just a flat rate. It ingests EICV7 poverty data (`pov_jan`). Poorer districts are mathematically modeled to be more price-sensitive, meaning subsidies have a realistic, disproportionately powerful impact in vulnerable areas.
 
 ---
 
-## ⚙️ Tech Stack
-* **Data Engine:** Python, Pandas, GeoPandas (Direct extraction from Stata `.dta` files)
-* **Backend:** FastAPI (High-performance API)
-* **Frontend:** React, TypeScript, Vite, Tailwind CSS v4
-* **Mapping:** Leaflet & React-Leaflet (OpenStreetMap)
+## 🧮 Data & Methodology
+Our platform relies heavily on authentic open data provided by NISR:
+*   **NISR EICV7 Household Microdata (`CS_S01_S5_S7_Household.dta`)**: Processed using Python (Pandas). We extract `s5cq22a` (primary cooking fuel) and map it to Clean vs. Biomass categories based on real survey weights. 
+*   **Poverty Analysis**: We ingest `pov_jan` (Poverty Rate) to calculate the socioeconomic vulnerability of each district.
+*   **Predictive Simulator**: Instead of a flat transition rate, our backend uses a dynamic elasticity formula. Poorer districts are mathematically modeled to be more price-sensitive, meaning a 20% subsidy will have a significantly higher adoption impact in high-poverty districts compared to wealthier ones.
+
+## 🏆 Hackathon Evaluation Alignment
+
+This project was specifically designed to maximize impact across all 5 evaluation criteria for **Track 3: Open Innovation**:
+
+1. **Problem Understanding (NST2/Vision 2050)**: Directly addresses the NST2 mandate to achieve 100% clean cooking energy by 2030 by identifying current gaps and modeling the path forward.
+2. **Data Use & Methodology**: We processed raw NISR EICV7 microdata (`CS_S01_S5_S7_Household.dta`) to extract fuel usage (`s5cq22a`) and cross-referenced it with district-level poverty metrics (`pov_jan`) for deep socioeconomic context.
+3. **Tech Innovation**: Instead of flat dashboards, we built a **Predictive Policy Simulator** using an economic elasticity model to simulate real-world human behavior in response to government pricing interventions.
+4. **Usability & Design**: Features a highly intuitive, glassmorphism-inspired UI with live, dynamically recoloring interactive maps (React-Leaflet).
+5. **Tangible Impact**: Engineered explicitly for real-world government use. Policymakers can instantly see the **Rwf Budget Required** and the exact number of households transitioning per district, allowing for hyper-targeted, budget-conscious policy rollouts.
 
 ---
 
-## 🚀 How to Run Locally
+## 🛠️ Technology Stack
+*   **Frontend**: React, TypeScript, Vite, TailwindCSS, React-Leaflet.
+*   **Backend**: Python, FastAPI, Pandas, Uvicorn.
+*   **CI/CD**: GitHub Actions, Vercel (Frontend Hosting), Render (Backend Hosting).
 
-### 1. Backend Setup
-Navigate to the root directory and activate the virtual environment:
+---
+
+## 💻 Running the Project Locally
+
+### 1. Start the Backend (FastAPI)
 ```bash
-# Activate virtual environment (Windows)
-backend\venv\Scripts\activate
-
-# Start the FastAPI Server
-uvicorn backend.app.main:app --reload --port 8000
+cd backend
+python -m venv venv
+venv\Scripts\activate  # On Windows
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
-*The API will be available at `http://localhost:8000/docs`.*
 
-### 2. Frontend Setup
-Open a new terminal and navigate to the frontend directory:
+### 2. Start the Frontend (React)
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start the Vite Development Server
 npm run dev
 ```
-*The dashboard will be available at `http://localhost:5173`.*
 
 ---
 
-## 📂 Project Structure
-```text
-rcei-platform/
-│
-├── backend/
-│   ├── app/
-│   │   ├── main.py                 # FastAPI Endpoints
-│   │   └── data/processed/         # Contains generated district_metrics.json
-│   ├── pipeline/
-│   │   └── clean_eicv.py           # Engine that processes EICV7 .dta files
-│   └── venv/                       # Python Environment
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── MapView.tsx         # Leaflet Spatial Mapping
-│   │   │   └── Simulator.tsx       # What-If Policy Drawer
-│   │   ├── services/
-│   │   │   └── api.ts              # Axios HTTP Client
-│   │   ├── App.tsx                 # Main Dashboard Layout
-│   │   └── index.css               # Global Tailwind CSS
-│   └── vite.config.ts              
-│
-└── dataset/                        # Raw NISR Microdata (Not pushed to Git)
-```
+## 👥 Team & Declarations
+This project was developed by **Adeline Tuyizere** & **Fiston Uzabumwana** for the 2026 NISR Big Data Hackathon. 
 
-## 👥 The Team
-Built with ❤️ for the NISR Big Data Hackathon 2026.
+* **Originality Declaration**: We declare that this submission is our own original work, has never been submitted to any other competition or entity in the past, and that all applicable sources of reference (NISR Open Data) are acknowledged in full.
+* **IP Agreement**: By submitting this project, we agree to assign and transfer all intellectual property rights in this submitted work, including but not limited to copyright and patent, to the National Institute of Statistics of Rwanda (NISR).
