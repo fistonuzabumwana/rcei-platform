@@ -4,7 +4,7 @@ import type { DistrictMetric } from './services/api'
 import { Activity, Flame, Zap } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
-import type { SimulationResult } from './services/api'
+
 
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
