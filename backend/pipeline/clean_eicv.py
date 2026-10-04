@@ -32,6 +32,7 @@ def process_eicv():
             
         biomass_rate = (group['is_biomass'] * group[weight_col]).sum() / total_weight * 100
         clean_rate = (group['is_clean'] * group[weight_col]).sum() / total_weight * 100
+        poverty_rate = (group['pov_jan'] * group[weight_col]).sum() / total_weight * 100
         
         estimated_households = int(total_weight)
         
@@ -44,8 +45,9 @@ def process_eicv():
         records[dist_id_int] = {
             "biomass_reliance_rate": round(biomass_rate, 2),
             "clean_energy_rate": round(clean_rate, 2),
+            "poverty_rate": round(poverty_rate, 2),
             "estimated_households": estimated_households,
-            "transition_priority_score": round((biomass_rate * 0.7) + ((100 - clean_rate) * 0.3), 1)
+            "transition_priority_score": round((biomass_rate * 0.5) + (poverty_rate * 0.5), 1)
         }
         
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
