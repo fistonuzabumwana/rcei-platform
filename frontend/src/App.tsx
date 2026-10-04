@@ -9,7 +9,6 @@ import type { SimulationResult } from './services/api'
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
   const [loading, setLoading] = useState(true)
-  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null)
 
   useEffect(() => {
     fetchDistrictMetrics().then(data => {
@@ -80,7 +79,7 @@ function App() {
           <MapView metrics={metrics} />
         </div>
         <div>
-          <Simulator onSimulationComplete={(res) => setSimulationResult(res)} />
+          <Simulator onSimulationComplete={() => {}} />
         </div>
       </div>
     </div>
