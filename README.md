@@ -8,7 +8,7 @@ This platform empowers policymakers, planners, and stakeholders to track Rwanda'
 
 ### 🚀 Live Demo
 - **Frontend (Live):** [https://rwanda-cleanenergy-insights-nisr.fistonuz.me](https://rwanda-cleanenergy-insights-nisr.fistonuz.me)
-- **Backend API (To be deployed on Render):** Will update shortly
+- **Backend API (Render):** [https://rcei-backend.onrender.com/docs](https://rcei-backend.onrender.com/docs)
 
 ---
 
