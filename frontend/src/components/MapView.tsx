@@ -1,23 +1,11 @@
-import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
+import { useState, useEffect } from 'react'
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { DistrictMetric } from '../services/api'
+import type { FeatureCollection } from 'geojson'
 
 interface MapViewProps {
   metrics: Record<string, DistrictMetric> | null
-}
-
-// Exact coordinates for all 30 districts in Rwanda
-const DISTRICT_COORDS: Record<string, [number, number]> = {
-  "11": [-1.9713, 30.0331], "12": [-1.8841, 30.1266], "13": [-2.0192, 30.1527],
-  "21": [-2.3430, 29.7702], "22": [-2.6069, 29.8467], "23": [-2.6858, 29.5298],
-  "24": [-2.5331, 29.6767], "25": [-2.3993, 29.4811], "26": [-2.1933, 29.7726],
-  "27": [-1.9383, 29.7260], "28": [-2.0279, 29.9019], "31": [-2.1707, 29.4404],
-  "32": [-1.8953, 29.2996], "33": [-1.6416, 29.3335], "34": [-1.6411, 29.5180],
-  "35": [-1.9032, 29.5716], "36": [-2.5573, 29.1930], "37": [-2.3580, 29.1545],
-  "41": [-1.7510, 29.9973], "42": [-1.7111, 29.7666], "43": [-1.5040, 29.6363],
-  "44": [-1.4608, 29.8011], "45": [-1.5792, 30.0677], "51": [-1.9787, 30.3539],
-  "52": [-1.2969, 30.3662], "53": [-1.6674, 30.3610], "54": [-1.8615, 30.6582],
-  "55": [-2.1953, 30.7347], "56": [-2.1990, 30.4699], "57": [-2.2329, 30.1589]
 }
 
 const DISTRICT_NAMES: Record<string, string> = {
@@ -28,8 +16,20 @@ const DISTRICT_NAMES: Record<string, string> = {
   "51": "Rwamagana", "52": "Nyagatare", "53": "Gatsibo", "54": "Kayonza", "55": "Kirehe", "56": "Ngoma", "57": "Bugesera"
 }
 
+// Create a reverse lookup dictionary: Name -> ID
+const NAME_TO_ID = Object.fromEntries(Object.entries(DISTRICT_NAMES).map(([id, name]) => [name, id]));
+
 export default function MapView({ metrics }: MapViewProps) {
-  if (!metrics) return <div className="h-full flex items-center justify-center">Loading Map...</div>
+  const [geoData, setGeoData] = useState<FeatureCollection | null>(null)
+
+  useEffect(() => {
+    fetch('/rwanda_districts.geojson')
+      .then(res => res.json())
+      .then(data => setGeoData(data))
+      .catch(err => console.error("Error loading GeoJSON", err))
+  }, [])
+
+  if (!metrics || !geoData) return <div className="h-full flex items-center justify-center">Loading True Geographic Map...</div>
 
   // getColor based on biomass dependency (higher is worse/red)
   const getColor = (biomass: number) => {
@@ -38,6 +38,55 @@ export default function MapView({ metrics }: MapViewProps) {
     if (biomass > 50) return '#eab308' // yellow-500
     if (biomass > 25) return '#84cc16' // lime-500
     return '#22c55e' // green-500
+  }
+
+  const getDistrictStyle = (feature: any) => {
+    const districtName = feature.properties.shapeName
+    const districtId = NAME_TO_ID[districtName]
+    const data = districtId ? metrics[districtId] : null
+    
+    return {
+      fillColor: data ? getColor(data.biomass_reliance_rate) : '#cccccc',
+      weight: 1.5,
+      opacity: 1,
+      color: 'white',
+      fillOpacity: 0.8
+    }
+  }
+
+  const onEachDistrict = (feature: any, layer: any) => {
+    const districtName = feature.properties.shapeName
+    const districtId = NAME_TO_ID[districtName]
+    const data = districtId ? metrics[districtId] : null
+
+    if (data) {
+      const tooltipContent = `
+        <div style="padding: 4px; min-width: 140px; font-family: sans-serif;">
+          <h3 style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 4px;">${districtName}</h3>
+          <p style="font-size: 13px; display: flex; justify-content: space-between; margin: 2px 0;"><span>Biomass:</span> <span style="font-weight: 600; color: #e11d48;">${data.biomass_reliance_rate.toFixed(1)}%</span></p>
+          <p style="font-size: 13px; display: flex; justify-content: space-between; margin: 2px 0;"><span>Clean:</span> <span style="font-weight: 600; color: #0284c7;">${data.clean_energy_rate.toFixed(1)}%</span></p>
+          <p style="font-size: 13px; display: flex; justify-content: space-between; margin: 2px 0;"><span>Poverty:</span> <span style="font-weight: 600; color: #d97706;">${data.poverty_rate?.toFixed(1) || '0.0'}%</span></p>
+          <p style="font-size: 11px; margin-top: 6px; color: #64748b; padding-top: 4px; border-top: 1px solid #eee;">Est. HHs: ${data.estimated_households.toLocaleString()}</p>
+        </div>
+      `;
+      layer.bindTooltip(tooltipContent, { sticky: true, opacity: 0.95 });
+      
+      // Add hover effect
+      layer.on({
+        mouseover: (e: any) => {
+          const l = e.target;
+          l.setStyle({
+            weight: 3,
+            color: '#333',
+            fillOpacity: 1
+          });
+          l.bringToFront();
+        },
+        mouseout: () => {
+          layer.setStyle(getDistrictStyle(feature));
+        }
+      });
+    }
   }
 
   return (
@@ -53,43 +102,21 @@ export default function MapView({ metrics }: MapViewProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {Object.entries(metrics).map(([districtId, data]) => {
-          const coords = DISTRICT_COORDS[districtId]
-          if (!coords) return null
-          
-          return (
-            <CircleMarker
-              key={districtId}
-              center={coords}
-              pathOptions={{
-                fillColor: getColor(data.biomass_reliance_rate),
-                fillOpacity: 0.7,
-                color: '#fff',
-                weight: 2
-              }}
-              radius={20}
-            >
-              <Tooltip direction="top" offset={[0, -20]} opacity={1}>
-                <div className="p-1 min-w-[120px]">
-                  <h3 className="font-bold border-b pb-1 mb-1">{DISTRICT_NAMES[districtId] || `District ${districtId}`}</h3>
-                  <p className="text-sm flex justify-between"><span>Biomass:</span> <span className="font-semibold text-rose-600">{data.biomass_reliance_rate.toFixed(1)}%</span></p>
-                  <p className="text-sm flex justify-between"><span>Clean:</span> <span className="font-semibold text-brand-600">{data.clean_energy_rate.toFixed(1)}%</span></p>
-                  <p className="text-sm flex justify-between"><span>Poverty:</span> <span className="font-semibold text-amber-600">{data.poverty_rate?.toFixed(1) || '0.0'}%</span></p>
-                  <p className="text-xs mt-2 text-slate-500 pt-1 border-t">Est. HHs: {data.estimated_households.toLocaleString()}</p>
-                </div>
-              </Tooltip>
-            </CircleMarker>
-          )
-        })}
+        <GeoJSON 
+          data={geoData} 
+          style={getDistrictStyle}
+          onEachFeature={onEachDistrict}
+        />
+
       </MapContainer>
       
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow border border-slate-200 z-[400] text-sm">
-        <h4 className="font-bold text-slate-700 mb-2">Biomass Reliance</h4>
-        <div className="flex items-center gap-2 mb-1"><div className="w-4 h-4 rounded-full bg-[#ef4444]"></div> &gt; 90% (Critical)</div>
-        <div className="flex items-center gap-2 mb-1"><div className="w-4 h-4 rounded-full bg-[#f97316]"></div> 75 - 90%</div>
-        <div className="flex items-center gap-2 mb-1"><div className="w-4 h-4 rounded-full bg-[#eab308]"></div> 50 - 75%</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#84cc16]"></div> &lt; 50% (On Track)</div>
+      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-200 z-[400] text-sm">
+        <h4 className="font-bold text-slate-800 mb-3 border-b pb-1">Biomass Reliance</h4>
+        <div className="flex items-center gap-3 mb-2"><div className="w-4 h-4 rounded-md shadow-sm bg-[#ef4444]"></div> <span className="font-medium text-slate-700">&gt; 90% (Critical)</span></div>
+        <div className="flex items-center gap-3 mb-2"><div className="w-4 h-4 rounded-md shadow-sm bg-[#f97316]"></div> <span className="font-medium text-slate-700">75 - 90%</span></div>
+        <div className="flex items-center gap-3 mb-2"><div className="w-4 h-4 rounded-md shadow-sm bg-[#eab308]"></div> <span className="font-medium text-slate-700">50 - 75%</span></div>
+        <div className="flex items-center gap-3"><div className="w-4 h-4 rounded-md shadow-sm bg-[#22c55e]"></div> <span className="font-medium text-slate-700">&lt; 50% (On Track)</span></div>
       </div>
     </div>
   )
