@@ -15,6 +15,9 @@ export interface SimulationResult {
   total_converted_households: number;
   total_annual_charcoal_saved_tons: number;
   estimated_budget_rwf: number;
+  carbon_credits_earned_tons: number;
+  carbon_credit_revenue_rwf: number;
+  net_policy_cost_rwf: number;
   district_impact: Record<string, {
     projected_biomass_rate: number;
     projected_clean_rate: number;
