@@ -18,11 +18,20 @@ export interface SimulationResult {
   carbon_credits_earned_tons: number;
   carbon_credit_revenue_rwf: number;
   net_policy_cost_rwf: number;
+
+  avoided_charcoal_expenditure_rwf?: number;
+
+
   district_impact: Record<string, {
     projected_biomass_rate: number;
     projected_clean_rate: number;
     converted_households: number;
     charcoal_saved_tons: number;
+  }>;
+  forecast: Array<{
+    year: number;
+    business_as_usual: number;
+    with_policy: number;
   }>;
 }
 

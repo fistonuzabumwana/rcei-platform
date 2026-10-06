@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { simulateSubsidy } from '../services/api'
 import type { SimulationResult } from '../services/api'
-import { Calculator, ArrowRight, Save } from 'lucide-react'
+import { Calculator, ArrowRight } from 'lucide-react'
 
 interface SimulatorProps {
   onSimulationComplete: (result: SimulationResult | null) => void
@@ -10,11 +10,9 @@ interface SimulatorProps {
 export default function Simulator({ onSimulationComplete }: SimulatorProps) {
   const [subsidy, setSubsidy] = useState<number>(0)
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<SimulationResult | null>(null)
 
   const handleSimulate = async () => {
     if (subsidy === 0) {
-      setResult(null)
       onSimulationComplete(null)
       return
     }
@@ -22,7 +20,6 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
     setLoading(true)
     try {
       const data = await simulateSubsidy(subsidy)
-      setResult(data)
       onSimulationComplete(data)
     } catch (err) {
       console.error(err)
@@ -32,22 +29,22 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
   }
 
   return (
-    <div className="glass-panel p-8 h-full flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-      <div className="flex items-center gap-4 mb-8 border-b border-slate-200/50 pb-5 relative">
-        <div className="p-3 bg-gradient-to-br from-brand-100 to-indigo-100 rounded-xl shadow-sm text-brand-600">
+    <div className="glass-panel p-8 flex flex-col relative overflow-hidden h-full">
+      <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+      <div className="flex items-center gap-4 mb-8 border-b border-[var(--divider)] pb-5 relative">
+        <div className="p-3 bg-indigo-500/10 rounded-xl text-[var(--accent)] shadow-sm">
           <Calculator size={26} />
         </div>
         <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Policy Simulator</h2>
-          <p className="text-sm font-medium text-slate-500">Model the impact of LPG/Clean Fuel Subsidies</p>
+          <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Policy Simulator</h2>
+          <p className="text-sm font-medium text-[var(--text-secondary)]">Model the impact of LPG/Clean Fuel Subsidies</p>
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 flex-1">
         <div className="flex justify-between items-end mb-2">
-          <label className="font-semibold text-slate-700">Clean Cooking Subsidy (%)</label>
-          <span className="text-2xl font-bold text-brand-600">{subsidy}%</span>
+          <label className="font-semibold text-[var(--text-primary)]">Clean Cooking Subsidy (%)</label>
+          <span className="text-2xl font-bold text-[var(--accent)]">{subsidy}%</span>
         </div>
         <input 
           type="range" 
@@ -56,9 +53,12 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
           step="5"
           value={subsidy} 
           onChange={(e) => setSubsidy(parseInt(e.target.value))}
-          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+          style={{
+            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${subsidy}%, var(--slider-track) ${subsidy}%, var(--slider-track) 100%)`
+          }}
+          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
         />
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-[var(--text-muted)] mt-4 leading-relaxed">
           Move the slider to simulate a government subsidy on clean cooking tech (e.g., LPG gas, electric stoves) to see the projected adoption shift.
         </p>
       </div>
@@ -66,7 +66,7 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
       <button 
         onClick={handleSimulate}
         disabled={loading}
-        className="w-full py-3.5 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-brand-600 hover:to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:shadow-brand-500/30 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 group"
+        className="w-full py-3.5 mt-auto bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-xl font-bold shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 group cursor-pointer"
       >
         {loading ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -74,59 +74,6 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
           <>Run Simulation <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></>
         )}
       </button>
-
-      {result && (
-        <div className="mt-8 flex-1 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <h3 className="font-extrabold text-slate-800 mb-5 flex items-center gap-2 uppercase tracking-wider text-sm">
-            <Save size={18} className="text-emerald-500" /> Projected Impact
-          </h3>
-          
-          <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/80 rounded-2xl p-5 border border-emerald-100 shadow-sm mb-4 hover-lift">
-            <p className="text-sm font-semibold text-emerald-800 mb-1 uppercase tracking-wide">Households Converted</p>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-600 to-teal-600">
-              +{Math.round(result.total_converted_households).toLocaleString()}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/80 rounded-2xl p-5 border border-amber-100 shadow-sm mb-4 hover-lift">
-            <p className="text-sm font-semibold text-amber-800 mb-1 uppercase tracking-wide">Charcoal Saved Annually</p>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-600 to-orange-600">
-              {Math.round(result.total_annual_charcoal_saved_tons).toLocaleString()} <span className="text-xl font-bold text-amber-700/60">tons</span>
-            </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/80 rounded-2xl p-5 border border-indigo-100 shadow-sm mb-4 hover-lift">
-            <p className="text-sm font-semibold text-indigo-800 mb-1 uppercase tracking-wide">Gross Policy Cost</p>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-blue-600">
-              {Math.round(result.estimated_budget_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-indigo-700/60">Rwf</span>
-            </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 rounded-2xl p-5 border border-green-200 shadow-sm mb-4 hover-lift relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-400/20 rounded-full blur-2xl"></div>
-            <p className="text-sm font-semibold text-green-800 mb-1 uppercase tracking-wide flex items-center gap-2">
-              🌍 Carbon Credit Revenue
-            </p>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-600 to-emerald-700 relative z-10">
-              +{Math.round(result.carbon_credit_revenue_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-green-700/60">Rwf</span>
-            </p>
-            <p className="text-xs text-green-700/80 mt-2">
-              Based on {Math.round(result.carbon_credits_earned_tons || 0).toLocaleString()} tons of CO₂e avoided ($15/ton).
-            </p>
-          </div>
-
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 shadow-lg hover-lift">
-            <p className="text-sm font-semibold text-slate-300 mb-1 uppercase tracking-wide">Net Policy Cost</p>
-            <p className="text-4xl font-black text-white">
-              {Math.round(result.net_policy_cost_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-slate-400">Rwf</span>
-            </p>
-            <p className="text-xs text-slate-400 mt-2 flex justify-between items-center">
-              <span>Gross Cost - Carbon Revenue</span>
-              {result.net_policy_cost_rwf === 0 && <span className="text-green-400 font-bold bg-green-400/10 px-2 py-0.5 rounded">Fully Funded!</span>}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
