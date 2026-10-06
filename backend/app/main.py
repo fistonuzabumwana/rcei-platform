@@ -119,12 +119,26 @@ def simulate_policy(req: SimulationRequest):
                 "charcoal_saved_tons": round(charcoal_saved, 1)
             }
             
-    total_budget_rwf = total_converted_households * (50000 * (req.subsidy_percentage / 100.0))
+    # Assuming average clean cooking kit (gas + stove) costs 50,000 RWF
+    kit_cost_rwf = 50000
+    subsidy_amount_per_hh = kit_cost_rwf * (req.subsidy_percentage / 100.0)
+    total_budget_rwf = total_converted_households * subsidy_amount_per_hh
+    
+    # Carbon Credit Logic
+    # 1 ton of charcoal saved ~ 3 tons of CO2e avoided
+    carbon_credits_earned_tons = annual_charcoal_saved_tons * 3.0
+    # Average voluntary carbon market price ~ $15 USD per ton. (1 USD = ~1300 RWF)
+    carbon_credit_revenue_rwf = carbon_credits_earned_tons * 15 * 1300
+    
+    net_policy_cost_rwf = max(0, total_budget_rwf - carbon_credit_revenue_rwf)
             
     return {
         "applied_subsidy": req.subsidy_percentage,
         "total_converted_households": int(total_converted_households),
         "total_annual_charcoal_saved_tons": round(annual_charcoal_saved_tons, 1),
         "estimated_budget_rwf": total_budget_rwf,
+        "carbon_credits_earned_tons": round(carbon_credits_earned_tons, 1),
+        "carbon_credit_revenue_rwf": carbon_credit_revenue_rwf,
+        "net_policy_cost_rwf": net_policy_cost_rwf,
         "district_impact": results
     }
