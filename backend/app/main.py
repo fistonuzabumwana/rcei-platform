@@ -3,7 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import os
-import joblib
+try:
+    import joblib
+except ImportError:
+    joblib = None
 import pandas as pd
 
 app = FastAPI(
@@ -30,12 +33,14 @@ with open(DATA_PATH, "r") as f:
 
 # Load the trained Machine Learning model
 MODEL_PATH = os.path.join(BASE_DIR, "core", "adoption_model.pkl")
-try:
-    adoption_model = joblib.load(MODEL_PATH)
-    print("Machine Learning model loaded successfully!")
-except Exception as e:
-    print(f"Warning: Could not load ML model: {e}")
-    adoption_model = None
+adoption_model = None
+if joblib is not None and os.path.exists(MODEL_PATH):
+    try:
+        adoption_model = joblib.load(MODEL_PATH)
+        print("Machine Learning model loaded successfully!")
+    except Exception as e:
+        print(f"Warning: Could not load ML model: {e}")
+
 
 class SimulationRequest(BaseModel):
     subsidy_percentage: float  # e.g., 20.0 for 20% subsidy
