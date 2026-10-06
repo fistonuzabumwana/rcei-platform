@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
-import { fetchDistrictMetrics } from './services/api'
+import { fetchDistrictMetrics, simulateSubsidy } from './services/api'
 import type { DistrictMetric } from './services/api'
 import { Activity, Flame, Zap, Download } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
 import SimulationResults from './components/SimulationResults'
 import ThemeToggle from './components/ThemeToggle'
+import { generatePolicyBriefPDF } from './services/pdfExport'
 
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
   
   // Track simulation results to update map
   const [simulationResult, setSimulationResult] = useState<any>(null)
@@ -51,6 +54,30 @@ function App() {
     }
   }
 
+  const handleExportPolicyBrief = async () => {
+    setIsExporting(true)
+    try {
+      let result = simulationResult
+      if (!result) {
+        // If simulator hasn't been run yet, run 30% baseline intervention for a complete report
+        try {
+          result = await simulateSubsidy(30)
+        } catch (simErr) {
+          console.warn('Fallback simulation failed, exporting with baseline metrics:', simErr)
+        }
+      }
+      generatePolicyBriefPDF({
+        metrics,
+        simulationResult: result,
+        appliedSubsidy: result ? result.applied_subsidy : 0
+      })
+    } catch (err) {
+      console.error('Failed to generate Policy Brief PDF:', err)
+    } finally {
+      setTimeout(() => setIsExporting(false), 800)
+    }
+  }
+
   return (
     <div className={`min-h-screen bg-[var(--page-bg)] font-sans ${isMapFullscreen ? 'p-0 overflow-hidden' : 'p-4 md:p-8'}`}>
       {!isMapFullscreen && (
@@ -75,14 +102,17 @@ function App() {
               </span>
             </div>
             <button 
-              onClick={() => window.print()}
-              className="px-5 py-2.5 bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/25 font-bold transition-all flex items-center gap-2 cursor-pointer"
+              onClick={handleExportPolicyBrief}
+              disabled={isExporting}
+              className="px-5 py-2.5 bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/25 font-bold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
+              title="Generate and download official NST2 Policy Brief PDF"
             >
-              <Download size={18} />
-              Export Policy Brief
+              <Download size={18} className={isExporting ? 'animate-bounce' : ''} />
+              {isExporting ? 'Generating PDF...' : 'Export Policy Brief'}
             </button>
           </div>
         </header>
+
       )}
 
       {!isMapFullscreen && (
