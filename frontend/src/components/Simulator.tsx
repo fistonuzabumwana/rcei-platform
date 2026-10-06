@@ -95,10 +95,34 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
             </p>
           </div>
           
-          <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/80 rounded-2xl p-5 border border-indigo-100 shadow-sm hover-lift">
-            <p className="text-sm font-semibold text-indigo-800 mb-1 uppercase tracking-wide">Est. Govt Budget Cost</p>
+          <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/80 rounded-2xl p-5 border border-indigo-100 shadow-sm mb-4 hover-lift">
+            <p className="text-sm font-semibold text-indigo-800 mb-1 uppercase tracking-wide">Gross Policy Cost</p>
             <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-blue-600">
               {Math.round(result.estimated_budget_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-indigo-700/60">Rwf</span>
+            </p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 rounded-2xl p-5 border border-green-200 shadow-sm mb-4 hover-lift relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-400/20 rounded-full blur-2xl"></div>
+            <p className="text-sm font-semibold text-green-800 mb-1 uppercase tracking-wide flex items-center gap-2">
+              🌍 Carbon Credit Revenue
+            </p>
+            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-600 to-emerald-700 relative z-10">
+              +{Math.round(result.carbon_credit_revenue_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-green-700/60">Rwf</span>
+            </p>
+            <p className="text-xs text-green-700/80 mt-2">
+              Based on {Math.round(result.carbon_credits_earned_tons || 0).toLocaleString()} tons of CO₂e avoided ($15/ton).
+            </p>
+          </div>
+
+          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 shadow-lg hover-lift">
+            <p className="text-sm font-semibold text-slate-300 mb-1 uppercase tracking-wide">Net Policy Cost</p>
+            <p className="text-4xl font-black text-white">
+              {Math.round(result.net_policy_cost_rwf || 0).toLocaleString()} <span className="text-xl font-bold text-slate-400">Rwf</span>
+            </p>
+            <p className="text-xs text-slate-400 mt-2 flex justify-between items-center">
+              <span>Gross Cost - Carbon Revenue</span>
+              {result.net_policy_cost_rwf === 0 && <span className="text-green-400 font-bold bg-green-400/10 px-2 py-0.5 rounded">Fully Funded!</span>}
             </p>
           </div>
         </div>
