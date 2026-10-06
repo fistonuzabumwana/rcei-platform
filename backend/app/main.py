@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import os
+import joblib
+import pandas as pd
 
 app = FastAPI(
     title="Rwanda CleanEnergy Insights API",
@@ -25,6 +27,15 @@ DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "district_metrics.json")
 
 with open(DATA_PATH, "r") as f:
     DISTRICT_METRICS = json.load(f)
+
+# Load the trained Machine Learning model
+MODEL_PATH = os.path.join(BASE_DIR, "core", "adoption_model.pkl")
+try:
+    adoption_model = joblib.load(MODEL_PATH)
+    print("Machine Learning model loaded successfully!")
+except Exception as e:
+    print(f"Warning: Could not load ML model: {e}")
+    adoption_model = None
 
 class SimulationRequest(BaseModel):
     subsidy_percentage: float  # e.g., 20.0 for 20% subsidy
@@ -52,9 +63,45 @@ def simulate_policy(req: SimulationRequest):
         if not req.target_districts or int(dist_id) in req.target_districts:
             poverty_rate = data.get("poverty_rate", 0.0)
             
-            # Elasticity formula: 0.02 base + up to 0.03 based on poverty rate
-            elasticity = 0.02 + (poverty_rate / 100.0) * 0.03
-            shift_rate = min(subsidy_ratio * elasticity, 1.0)
+            # Assuming average clean cooking kit (gas + stove) costs 50,000 RWF
+            kit_cost_rwf = 50000
+            subsidy_amount_per_hh = kit_cost_rwf * (req.subsidy_percentage / 100.0)
+            final_price = kit_cost_rwf - subsidy_amount_per_hh
+            
+            shift_rate = 0.0
+            
+            if adoption_model:
+                # District approximation based on metrics
+                # Since we aggregate at district level, we approximate:
+                is_urban = 1 if int(dist_id) in [11, 12, 13] else 0 # Kigali districts are urban
+                
+                # We use poverty_rate to estimate fraction of extreme poor / poor
+                is_extreme_poor = 1 if poverty_rate > 30 else 0
+                is_poor = 1 if poverty_rate > 15 and poverty_rate <= 30 else 0
+                
+                features_baseline = pd.DataFrame([{
+                    'is_urban': is_urban,
+                    'is_extreme_poor': is_extreme_poor,
+                    'is_poor': is_poor,
+                    'lpg_kit_price': kit_cost_rwf
+                }])
+                
+                features_subsidy = pd.DataFrame([{
+                    'is_urban': is_urban,
+                    'is_extreme_poor': is_extreme_poor,
+                    'is_poor': is_poor,
+                    'lpg_kit_price': final_price
+                }])
+                
+                baseline_prob = adoption_model.predict(features_baseline)[0]
+                subsidy_prob = adoption_model.predict(features_subsidy)[0]
+                
+                # shift_rate is the marginal increase in probability of switching
+                shift_rate = max(0.0, min(subsidy_prob - baseline_prob, 1.0))
+            else:
+                # Fallback to linear elasticity
+                elasticity = 0.02 + (poverty_rate / 100.0) * 0.03
+                shift_rate = min(subsidy_ratio * elasticity, 1.0)
             
             current_biomass_hh = data["estimated_households"] * (data["biomass_reliance_rate"] / 100.0)
             potential_conversions = current_biomass_hh * shift_rate
