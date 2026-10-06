@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { fetchDistrictMetrics } from './services/api'
 import type { DistrictMetric } from './services/api'
-import { Activity, Flame, Zap } from 'lucide-react'
+import { Activity, Flame, Zap, Download } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
-
+import SimulationResults from './components/SimulationResults'
+import ThemeToggle from './components/ThemeToggle'
 
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
@@ -13,6 +14,9 @@ function App() {
   
   // Track simulation results to update map
   const [simulationResult, setSimulationResult] = useState<any>(null)
+  
+  // Track map fullscreen state to hide conflicting dashboard elements
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false)
 
   useEffect(() => {
     fetchDistrictMetrics().then(data => {
@@ -48,65 +52,77 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-white p-4 md:p-8 font-sans">
-      <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between bg-white/60 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-200/60">
-        <div className="mb-4 md:mb-0">
-          <div className="flex items-center space-x-3 mb-1">
-            <div className="p-2 bg-brand-600 rounded-lg shadow-md shadow-brand-500/30">
-              <Zap className="text-white w-6 h-6" />
+    <div className={`min-h-screen bg-[var(--page-bg)] font-sans ${isMapFullscreen ? 'p-0 overflow-hidden' : 'p-4 md:p-8'}`}>
+      {!isMapFullscreen && (
+        <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between glass-panel p-6">
+          <div className="mb-4 md:mb-0">
+            <div className="flex items-center space-x-3 mb-1">
+              <div className="p-2.5 bg-indigo-600 rounded-xl shadow-md shadow-indigo-500/30">
+                <Zap className="text-white w-6 h-6" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                Rwanda <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-indigo-500">CleanEnergy</span> Insights
+              </h1>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-              Rwanda <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">CleanEnergy</span> Insights
-            </h1>
+            <p className="mt-2 text-[var(--text-secondary)] font-medium ml-12">NST2 Decision Platform & Socioeconomic Simulator</p>
           </div>
-          <p className="mt-2 text-slate-500 font-medium ml-12">NST2 Decision Platform & Socioeconomic Simulator</p>
-        </div>
-        <div className="flex space-x-4">
-          <div className={`glass-panel px-5 py-2.5 flex items-center space-x-3 transition-all ${error ? 'bg-red-50/80 border-red-200' : ''}`}>
-            <div className={`w-3 h-3 rounded-full shadow-sm ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-500 shadow-red-500/50' : 'bg-emerald-500 shadow-emerald-500/50'}`}></div>
-            <span className={`text-sm font-semibold tracking-wide uppercase ${error ? 'text-red-700' : 'text-slate-700'}`}>
-              {loading ? 'Connecting...' : error ? 'API Disconnected' : 'Live Data Connected'}
-            </span>
+          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 items-center">
+            <ThemeToggle />
+            <div className={`px-5 py-2.5 rounded-xl flex items-center space-x-3 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : ''}`}>
+              <div className={`w-3 h-3 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-500 shadow-red-500/50' : 'live-dot-glow'}`}></div>
+              <span className={`text-sm font-semibold tracking-wide uppercase ${error ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>
+                {loading ? 'Connecting...' : error ? 'API Disconnected' : 'Live Data Connected'}
+              </span>
+            </div>
+            <button 
+              onClick={() => window.print()}
+              className="px-5 py-2.5 bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/25 font-bold transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Download size={18} />
+              Export Policy Brief
+            </button>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl"></div>
-            <div className="flex items-center justify-between mb-4 relative">
-              <h3 className="font-bold text-slate-700 tracking-tight">Highest Biomass Reliance</h3>
-              <div className="p-2 bg-rose-100 rounded-lg"><Flame className="text-rose-600 w-5 h-5" /></div>
-            </div>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-700 relative">{metrics ? avgBiomass.toFixed(1) + '%' : '--%'}</p>
-            <p className="text-sm font-medium text-slate-500 mt-2 relative">National Average (Weighted)</p>
+      {!isMapFullscreen && (
+        loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
           </div>
-          
-          <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl"></div>
-            <div className="flex items-center justify-between mb-4 relative">
-              <h3 className="font-bold text-slate-700 tracking-tight">Clean Energy Adoption</h3>
-              <div className="p-2 bg-emerald-100 rounded-lg"><Zap className="text-emerald-600 w-5 h-5" /></div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl pointer-events-none"></div>
+              <div className="flex items-center justify-between mb-4 relative">
+                <h3 className="font-bold text-[var(--text-secondary)] tracking-tight">Highest Biomass Reliance</h3>
+                <div className="p-2.5 bg-rose-500/10 rounded-xl text-[var(--danger)]"><Flame className="w-5 h-5" /></div>
+              </div>
+              <p className="text-4xl font-black text-[var(--text-primary)] relative">{metrics ? avgBiomass.toFixed(1) + '%' : '--%'}</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">National Average (Weighted)</p>
             </div>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-600 to-teal-600 relative">{metrics ? avgClean.toFixed(1) + '%' : '--%'}</p>
-            <p className="text-sm font-medium text-slate-500 mt-2 relative">NST2 Target: 100% by 2030</p>
-          </div>
+            
+            <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl pointer-events-none"></div>
+              <div className="flex items-center justify-between mb-4 relative">
+                <h3 className="font-bold text-[var(--text-secondary)] tracking-tight">Clean Energy Adoption</h3>
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl text-[var(--success)]"><Zap className="w-5 h-5" /></div>
+              </div>
+              <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-500 to-teal-400 dark:from-[#34D399] dark:to-teal-300 relative">{metrics ? avgClean.toFixed(1) + '%' : '--%'}</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">NST2 Target: 100% by 2030</p>
+            </div>
 
-          <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl"></div>
-            <div className="flex items-center justify-between mb-4 relative">
-              <h3 className="font-bold text-slate-700 tracking-tight">Districts Analyzed</h3>
-              <div className="p-2 bg-indigo-100 rounded-lg"><Activity className="text-indigo-600 w-5 h-5" /></div>
+            <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl pointer-events-none"></div>
+              <div className="flex items-center justify-between mb-4 relative">
+                <h3 className="font-bold text-[var(--text-secondary)] tracking-tight">Districts Analyzed</h3>
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl text-[var(--accent)]"><Activity className="w-5 h-5" /></div>
+              </div>
+              <p className="text-4xl font-black text-[var(--text-primary)] relative">{metrics ? Object.keys(metrics).length : 0}</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">Powered by EICV7 Microdata</p>
             </div>
-            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-700 relative">{metrics ? Object.keys(metrics).length : 0}</p>
-            <p className="text-sm font-medium text-slate-500 mt-2 relative">Powered by EICV7 Microdata</p>
           </div>
-        </div>
+        )
       )}
 
       {/* Prepare display metrics based on simulation */}
@@ -129,19 +145,30 @@ function App() {
         }
         
         return (
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 glass-panel p-2 relative z-0">
-              {simulationResult && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-brand-600 text-white px-4 py-1.5 rounded-full shadow-lg font-bold text-sm tracking-wide shadow-brand-500/50 animate-bounce">
-                  Live Projected View Active
+          <>
+            <div className={isMapFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : "mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8"}>
+              <div className={isMapFullscreen ? "w-full h-full p-0" : "lg:col-span-2 glass-panel p-2 relative z-0"}>
+                {simulationResult && !isMapFullscreen && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-indigo-600 text-white px-4 py-1.5 rounded-full shadow-lg font-bold text-sm tracking-wide shadow-indigo-500/40 animate-bounce">
+                    Live Projected View Active
+                  </div>
+                )}
+                <MapView 
+                  metrics={displayMetrics} 
+                  isFullscreen={isMapFullscreen}
+                  onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+                />
+              </div>
+              {!isMapFullscreen && (
+                <div className="z-10 flex flex-col justify-stretch">
+                  <Simulator onSimulationComplete={setSimulationResult} />
                 </div>
               )}
-              <MapView metrics={displayMetrics} />
             </div>
-            <div className="z-10">
-              <Simulator onSimulationComplete={setSimulationResult} />
-            </div>
-          </div>
+            {simulationResult && !isMapFullscreen && (
+              <SimulationResults result={simulationResult} />
+            )}
+          </>
         );
       })()}
     </div>
