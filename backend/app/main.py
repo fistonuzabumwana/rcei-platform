@@ -130,7 +130,35 @@ def simulate_policy(req: SimulationRequest):
     # Average voluntary carbon market price ~ $15 USD per ton. (1 USD = ~1300 RWF)
     carbon_credit_revenue_rwf = carbon_credits_earned_tons * 15 * 1300
     
-    net_policy_cost_rwf = max(0, total_budget_rwf - carbon_credit_revenue_rwf)
+    # Do not clamp to 0, if revenue > budget, it's negative (Profit!)
+    net_policy_cost_rwf = total_budget_rwf - carbon_credit_revenue_rwf
+    
+
+    # Citizen Economic Impact: Avoided Charcoal Purchases
+    # Average Kigali market price: 900 RWF per kg -> 900,000 RWF per ton
+    avoided_charcoal_expenditure_rwf = annual_charcoal_saved_tons * 900000
+    
+
+
+    # 2030 Time-Series Forecasting
+    total_hh = sum(d["estimated_households"] for d in DISTRICT_METRICS.values())
+    total_biomass_hh_start = sum(d["estimated_households"] * (d["biomass_reliance_rate"] / 100.0) for d in DISTRICT_METRICS.values())
+    
+    current_national_biomass_rate = (total_biomass_hh_start / total_hh) * 100 if total_hh > 0 else 0
+    projected_national_biomass_rate = ((total_biomass_hh_start - total_converted_households) / total_hh) * 100 if total_hh > 0 else 0
+    
+    forecast = []
+    base_rate = current_national_biomass_rate
+    policy_rate = projected_national_biomass_rate
+    
+    for year in range(2024, 2031):
+        forecast.append({
+            "year": year,
+            "business_as_usual": round(base_rate, 1),
+            "with_policy": round(policy_rate, 1)
+        })
+        base_rate = max(0, base_rate - 1.5) # Organic drop
+        policy_rate = max(0, policy_rate - 2.5) # Momentum drop
             
     return {
         "applied_subsidy": req.subsidy_percentage,
@@ -140,5 +168,10 @@ def simulate_policy(req: SimulationRequest):
         "carbon_credits_earned_tons": round(carbon_credits_earned_tons, 1),
         "carbon_credit_revenue_rwf": carbon_credit_revenue_rwf,
         "net_policy_cost_rwf": net_policy_cost_rwf,
-        "district_impact": results
+
+        "avoided_charcoal_expenditure_rwf": avoided_charcoal_expenditure_rwf,
+
+
+        "district_impact": results,
+        "forecast": forecast
     }

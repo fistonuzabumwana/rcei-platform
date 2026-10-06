@@ -6,3 +6,8 @@ dataset/
 *.pyc
 .env*
 .DS_Store
+
+# Local scripts and secrets
+*.ps1
+rewrite_main.py
+

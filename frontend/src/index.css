@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-50: #eff6ff;
   --color-brand-500: #3b82f6;
@@ -7,32 +9,321 @@
   --color-brand-900: #1e3a8a;
 }
 
-body {
-  background-color: #f8fafc;
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+/* CSS Color Tokens System */
+:root {
+  --page-bg: #f8fafc;
+  --card-surface: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --card-glow: none;
+  --elevated-surface: #f1f5f9;
+  --elevated-border: rgba(0, 0, 0, 0.08);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --grid-line: rgba(0, 0, 0, 0.08);
+  --divider: rgba(0, 0, 0, 0.08);
+
+  /* Tinted impact cards - Light theme */
+  --tint-green-bg: linear-gradient(135deg, rgba(236, 253, 245, 0.9), rgba(204, 251, 241, 0.9));
+  --tint-green-border: rgba(16, 185, 129, 0.25);
+  --tint-green-label: #065f46;
+  --tint-green-num: #059669;
+
+  --tint-orange-bg: linear-gradient(135deg, rgba(254, 243, 199, 0.9), rgba(255, 237, 213, 0.9));
+  --tint-orange-border: rgba(245, 158, 11, 0.25);
+  --tint-orange-label: #92400e;
+  --tint-orange-num: #d97706;
+
+  --tint-red-bg: linear-gradient(135deg, rgba(255, 241, 242, 0.9), rgba(252, 231, 243, 0.9));
+  --tint-red-border: rgba(244, 63, 94, 0.25);
+  --tint-red-label: #9f1239;
+  --tint-red-num: #e11d48;
+
+  --tint-indigo-bg: linear-gradient(135deg, rgba(238, 242, 255, 0.9), rgba(239, 246, 255, 0.9));
+  --tint-indigo-border: rgba(99, 102, 241, 0.25);
+  --tint-indigo-label: #3730a3;
+  --tint-indigo-num: #4f46e5;
+
+  --net-profit-bg: #0f172a;
+  --net-profit-border: rgba(255, 255, 255, 0.1);
+  --net-profit-text: #ffffff;
+
+  --btn-primary-bg: #0f172a;
+  --btn-primary-hover: #1e293b;
+  --btn-primary-text: #ffffff;
+
+  --slider-track: #e2e8f0;
+  --slider-thumb: #6366f1;
 }
 
-/* Premium UI Aesthetics */
+.dark, [data-theme="dark"] {
+  --page-bg: #0b1120;
+  --card-surface: #111827;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --card-glow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --elevated-surface: #1f2937;
+  --elevated-border: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+
+  --success: #34d399;
+  --warning: #fb923c;
+  --danger: #f87171;
+
+  --grid-line: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.08);
+
+  /* Tinted impact cards - dark translucent tints */
+  --tint-green-bg: rgba(52, 211, 153, 0.08);
+  --tint-green-border: rgba(52, 211, 153, 0.2);
+  --tint-green-label: #34d399;
+  --tint-green-num: #6ee7b7;
+
+  --tint-orange-bg: rgba(251, 146, 60, 0.08);
+  --tint-orange-border: rgba(251, 146, 60, 0.2);
+  --tint-orange-label: #fb923c;
+  --tint-orange-num: #fdba74;
+
+  --tint-red-bg: rgba(248, 113, 113, 0.08);
+  --tint-red-border: rgba(248, 113, 113, 0.2);
+  --tint-red-label: #f87171;
+  --tint-red-num: #fca5a5;
+
+  --tint-indigo-bg: rgba(99, 102, 241, 0.08);
+  --tint-indigo-border: rgba(99, 102, 241, 0.2);
+  --tint-indigo-label: #818cf8;
+  --tint-indigo-num: #a5b4fc;
+
+  /* Net policy profit card - gradient #0F172A to #064E3B */
+  --net-profit-bg: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+  --net-profit-border: rgba(52, 211, 153, 0.25);
+  --net-profit-text: #f1f5f9;
+
+  /* Primary buttons in dark mode: light/indigo action buttons */
+  --btn-primary-bg: #6366f1;
+  --btn-primary-hover: #818cf8;
+  --btn-primary-text: #ffffff;
+
+  --slider-track: #1f2937;
+  --slider-thumb: #ffffff;
+}
+
+body {
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth 200ms transition on background and color changes */
+body, header, nav, div, button, input, span, p, h1, h2, h3, h4, section, article {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Exclude elements that shouldn't transition */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-tile,
+.leaflet-pane,
+.leaflet-marker-icon,
+.recharts-wrapper,
+.recharts-wrapper *,
+input[type="range"] {
+  transition: none !important;
+}
+
+/* Cards & Surfaces */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  background-color: var(--card-surface);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   border-radius: 1rem;
 }
 
+.dark .glass-panel,
+[data-theme="dark"] .glass-panel {
+  background-color: var(--card-surface);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-glow), var(--card-shadow);
+}
+
+/* Hover lift effect */
 .hover-lift {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
 }
 
-/* Custom range slider styling */
+.dark .hover-lift:hover,
+[data-theme="dark"] .hover-lift:hover {
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Range Slider Styling */
 input[type=range] {
-  accent-color: var(--color-brand-600);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: var(--slider-thumb);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  margin-top: -6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dark input[type=range]::-webkit-slider-thumb,
+[data-theme="dark"] input[type=range]::-webkit-slider-thumb {
+  background-color: #ffffff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.8), 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type=range]::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+input[type=range]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--slider-thumb);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark input[type=range]::-moz-range-thumb,
+[data-theme="dark"] input[type=range]::-moz-range-thumb {
+  background-color: #ffffff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.8), 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+/* Leaflet Map Controls and Tooltips - Restyled as Dark Cards */
+.dark .leaflet-bar,
+[data-theme="dark"] .leaflet-bar {
+  border: 1px solid var(--card-border) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+}
+
+.dark .leaflet-bar a,
+[data-theme="dark"] .leaflet-bar a {
+  background-color: var(--card-surface) !important;
+  border-bottom: 1px solid var(--divider) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .leaflet-bar a:hover,
+[data-theme="dark"] .leaflet-bar a:hover {
+  background-color: var(--elevated-surface) !important;
+  color: var(--accent) !important;
+}
+
+.dark .leaflet-bar a:last-child,
+[data-theme="dark"] .leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
+.dark .leaflet-control-attribution,
+[data-theme="dark"] .leaflet-control-attribution {
+  background-color: rgba(17, 24, 39, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  color: var(--text-muted) !important;
+  border-radius: 6px 0 0 0 !important;
+}
+
+.dark .leaflet-control-attribution a,
+[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--text-secondary) !important;
+}
+
+.dark .leaflet-tooltip,
+[data-theme="dark"] .leaflet-tooltip {
+  background-color: var(--card-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0.75rem !important;
+  padding: 8px 12px !important;
+}
+
+.dark .leaflet-tooltip-top:before {
+  border-top-color: var(--card-surface) !important;
+}
+.dark .leaflet-tooltip-bottom:before {
+  border-bottom-color: var(--card-surface) !important;
+}
+.dark .leaflet-tooltip-left:before {
+  border-left-color: var(--card-surface) !important;
+}
+.dark .leaflet-tooltip-right:before {
+  border-right-color: var(--card-surface) !important;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .glass-panel {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  button {
+    display: none !important;
+  }
+  input[type=range] {
+    display: none !important;
+  }
+  .hover-lift {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
