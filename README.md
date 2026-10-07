@@ -11,6 +11,11 @@
 
 ## 📌 Executive Summary
 
+<div align="center">
+  <img src="asset/image/dashboard_view.png" alt="Rwanda CleanEnergy Insights Platform Preview" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+  <p><em>Rwanda CleanEnergy Insights: 30-District Choropleth Map, Random Forest Policy Simulator, and Carbon Credit Financial Modeling</em></p>
+</div>
+
 **Rwanda CleanEnergy Insights (RCEI)** is an evidence-based decision-support platform and socioeconomic simulator engineered for the **2026 National Institute of Statistics of Rwanda (NISR) Big Data Hackathon**. 
 
 Aligned with **Track 3: Open Innovation**, RCEI tackles Rwanda's urgent clean cooking transition mandated under the **National Strategy for Transformation (NST2)** and **Vision 2050**. By ingesting and analyzing raw microdata from NISR's **7th Integrated Household Living Conditions Survey (EICV7)** and deploying a calibrated **Random Forest Machine Learning model**, RCEI provides government ministries (**MININFRA**, **MINECOFIN**, **REMA**, **NISR**) with actionable policy simulation:
@@ -20,6 +25,7 @@ Aligned with **Track 3: Open Innovation**, RCEI tackles Rwanda's urgent clean co
 - Unlocks **sovereign climate finance** via **Article 6 Carbon Credit monetization** (@ $15/tCO2e), proving that subsidies can become fiscal surpluses.
 - Projects the **2030 multi-year trajectory** against the NST2 mandate.
 - Generates publication-grade **2-page Executive Policy Briefs** directly to PDF from scratch.
+- Provides **1-click Research-Grade CSV Data Exports** for immediate econometric analysis.
 
 ---
 
@@ -133,6 +139,10 @@ The Government of Rwanda, through **NST2 (2024–2029)**, has set a legally bind
 ### 8. 🌓 Premium Dark & Light Theme System
 - Complete semantic design system utilizing CSS custom properties.
 - Features soft glassmorphism, glowing live API indicator dots, tailored accessible palettes, and instant zero-latency theme switching.
+
+### 9. 📥 Research-Grade Raw Data Export (CSV)
+- Empowers NISR data scientists and researchers to download the full 30-district baseline and projected dataset directly into Excel, Python, or Stata.
+- Formatted as `Rwanda_Districts_CleanEnergy_Data_[X]pct_Subsidy.csv` with province groupings, baseline vs. projected rates, poverty tiers, and displaced charcoal tonnage.
 
 ---
 
