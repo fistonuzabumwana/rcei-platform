@@ -136,9 +136,23 @@ function App() {
           </div>
           <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 items-center">
             <ThemeToggle />
-            <div className={`px-5 py-2.5 rounded-xl flex items-center space-x-3 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : ''}`}>
-              <div className={`w-3 h-3 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-500 shadow-red-500/50' : 'live-dot-glow'}`}></div>
-              <span className={`text-sm font-semibold tracking-wide uppercase ${error ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>
+            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : ''}`}>
+              {loading ? (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                </span>
+              ) : error ? (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                </span>
+              ) : (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                </span>
+              )}
+              <span className={`text-xs font-bold tracking-wider uppercase ${error ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-primary)]'}`}>
                 {loading ? 'Connecting...' : error ? 'API Disconnected' : 'Live Data Connected'}
               </span>
             </div>
@@ -165,10 +179,10 @@ function App() {
 
       {/* Evaluator Quick Tour / 3-Step Walkthrough Banner */}
       {!isMapFullscreen && (
-        <section className="mb-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 via-[var(--card-surface)] to-[var(--elevated-surface)] p-5 md:p-6 shadow-xl backdrop-blur-md relative overflow-hidden transition-all">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-indigo-500/20 pb-4">
+        <section className="mb-8 rounded-2xl border border-indigo-200/90 dark:border-indigo-500/30 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50 dark:from-indigo-950/40 dark:via-[var(--card-surface)] dark:to-[var(--elevated-surface)] p-5 md:p-6 shadow-xl backdrop-blur-md relative overflow-hidden transition-all">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-indigo-200/80 dark:border-indigo-500/20 pb-4">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 font-black text-sm">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-600/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/40 font-black text-sm">
                 🏆
               </span>
               <div>
@@ -176,7 +190,7 @@ function App() {
                   <h2 className="text-base md:text-lg font-black tracking-tight text-[var(--text-primary)]">
                     Hackathon Evaluator Quick Tour
                   </h2>
-                  <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100/90 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">
                     Track 3: Open Innovation
                   </span>
                 </div>
@@ -211,14 +225,14 @@ function App() {
             <div className="mt-5 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Step 1 */}
-                <div className="p-4 rounded-xl bg-[var(--elevated-surface)] border border-[var(--card-border)] hover:border-indigo-400/50 transition-all flex flex-col justify-between">
+                <div className="p-4 rounded-xl bg-white dark:bg-[var(--elevated-surface)] border border-slate-200/80 dark:border-[var(--card-border)] hover:border-indigo-400/50 shadow-sm transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 font-black text-xs flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-black text-xs flex items-center justify-center">
                         1
                       </div>
                       <h4 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-1.5">
-                        <Sliders size={15} className="text-indigo-400" />
+                        <Sliders size={15} className="text-indigo-600 dark:text-indigo-400" />
                         Configure Policy
                       </h4>
                     </div>
@@ -226,21 +240,21 @@ function App() {
                       Adjust the subsidy slider (0–100%) or pick targeted clusters (e.g. <strong>Western/Southern high-biomass zones</strong>) in the policy simulator.
                     </p>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-[var(--card-border)]/50 text-[11px] font-semibold text-indigo-400 flex items-center gap-1">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-[var(--card-border)]/50 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
                     <Compass size={12} />
                     <span>Simulates poverty elasticity</span>
                   </div>
                 </div>
 
                 {/* Step 2 */}
-                <div className="p-4 rounded-xl bg-[var(--elevated-surface)] border border-[var(--card-border)] hover:border-emerald-400/50 transition-all flex flex-col justify-between">
+                <div className="p-4 rounded-xl bg-white dark:bg-[var(--elevated-surface)] border border-slate-200/80 dark:border-[var(--card-border)] hover:border-emerald-400/50 shadow-sm transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-black text-xs flex items-center justify-center">
                         2
                       </div>
                       <h4 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-1.5">
-                        <Sparkles size={15} className="text-emerald-400" />
+                        <Sparkles size={15} className="text-emerald-600 dark:text-emerald-400" />
                         Live Geo & Fiscal Shift
                       </h4>
                     </div>
@@ -248,21 +262,21 @@ function App() {
                       Watch the 30-district choropleth map turn green. Toggle <strong>Carbon Price Sensitivity ($10, $15, $25)</strong> to prove Article 6 sovereign profit.
                     </p>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-[var(--card-border)]/50 text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-[var(--card-border)]/50 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                     <Zap size={12} />
                     <span>Interactive sensitivity selector</span>
                   </div>
                 </div>
 
                 {/* Step 3 */}
-                <div className="p-4 rounded-xl bg-[var(--elevated-surface)] border border-[var(--card-border)] hover:border-brand-400/50 transition-all flex flex-col justify-between">
+                <div className="p-4 rounded-xl bg-white dark:bg-[var(--elevated-surface)] border border-slate-200/80 dark:border-[var(--card-border)] hover:border-amber-400/50 shadow-sm transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 font-black text-xs flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 font-black text-xs flex items-center justify-center">
                         3
                       </div>
                       <h4 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-1.5">
-                        <FileText size={15} className="text-amber-400" />
+                        <FileText size={15} className="text-amber-600 dark:text-amber-400" />
                         Export Deliverables
                       </h4>
                     </div>
@@ -270,7 +284,7 @@ function App() {
                       Click <strong>Export Policy Brief</strong> for a 2-page publication-grade PDF, or <strong>Export CSV</strong> for econometric microdata validation.
                     </p>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-[var(--card-border)]/50 text-[11px] font-semibold text-amber-400 flex items-center gap-1">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-[var(--card-border)]/50 text-[11px] font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1">
                     <Download size={12} />
                     <span>Vector PDF + raw CSV data</span>
                   </div>
@@ -278,9 +292,9 @@ function App() {
               </div>
 
               {/* 1-Click Action Shortcut */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-950/20 rounded-xl p-3 border border-indigo-500/20">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-50/90 dark:bg-indigo-950/20 rounded-xl p-3 border border-indigo-200/80 dark:border-indigo-500/20">
                 <div className="text-xs text-[var(--text-secondary)] font-medium flex items-center gap-2">
-                  <PlayCircle size={16} className="text-indigo-400 shrink-0" />
+                  <PlayCircle size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                   <span>
                     <strong>Want to see it in action instantly?</strong> Run our recommended 40% clean cooking policy scenario.
                   </span>

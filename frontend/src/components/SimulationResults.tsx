@@ -45,12 +45,12 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
         </div>
 
         {isTargeted ? (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-400 text-xs font-bold">
             <ShieldAlert size={15} />
             <span>Targeted Scope: {result.targeted_districts_count} Priority Districts Active</span>
           </div>
         ) : (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold">
             <Sparkles size={15} />
             <span>Universal National Rollout: All 30 Districts</span>
           </div>
@@ -111,7 +111,7 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
           style={{ background: 'var(--elevated-surface)', borderColor: 'var(--card-border)' }}
         >
           <div>
-            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-indigo-400 flex items-center gap-1">
+            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
               <HeartHandshake size={13} /> Relief Per Family
             </p>
             <p className="text-3xl font-black text-[var(--text-primary)]">
@@ -235,7 +235,7 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
 
       {/* Human, Gender & Public Health Dividend Banner */}
       <div className="mt-6 p-5 rounded-2xl border border-[var(--card-border)] bg-[var(--elevated-surface)] shadow-sm">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 flex items-center gap-2">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 mb-3 flex items-center gap-2">
           <span>👩‍👧</span> Gender Inclusion & Public Health Dividend (NST2 GESI Alignment)
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">

@@ -107,7 +107,7 @@ export default function DistrictLeaderboard({
                   #{index + 1}
                 </span>
                 <div>
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-indigo-400 transition-colors">
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {name}
                   </h4>
                   <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
@@ -140,7 +140,7 @@ export default function DistrictLeaderboard({
 
       <div className="mt-4 pt-3 border-t border-[var(--divider)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
         <span>Click any district above to inspect on map</span>
-        <span className="font-semibold text-indigo-400">30 Districts Total</span>
+        <span className="font-semibold text-indigo-700 dark:text-indigo-400">30 Districts Total</span>
       </div>
     </div>
   )
