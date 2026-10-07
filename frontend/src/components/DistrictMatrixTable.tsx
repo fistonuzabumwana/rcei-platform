@@ -137,8 +137,8 @@ export default function DistrictMatrixTable({
       return <ArrowUpDown size={13} className="text-[var(--text-muted)] opacity-60 group-hover:opacity-100" />
     }
     return sortOrder === 'asc' 
-      ? <ArrowUp size={13} className="text-indigo-400 font-bold" />
-      : <ArrowDown size={13} className="text-indigo-400 font-bold" />
+      ? <ArrowUp size={13} className="text-indigo-600 dark:text-indigo-400 font-bold" />
+      : <ArrowDown size={13} className="text-indigo-600 dark:text-indigo-400 font-bold" />
   }
 
   if (!metrics) return null
@@ -149,13 +149,13 @@ export default function DistrictMatrixTable({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--divider)] pb-5">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-700 dark:text-indigo-400">
               <Table size={22} />
             </div>
             <div>
               <h3 className="font-extrabold text-xl text-[var(--text-primary)] tracking-tight flex items-center gap-2">
                 All 30 Districts Matrix & Transition Explorer
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 font-bold border border-indigo-500/30">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-500/30">
                   {filteredAndSortedRows.length} of 30 Districts
                 </span>
               </h3>
@@ -338,7 +338,7 @@ export default function DistrictMatrixTable({
                             {row.name}
                           </span>
                           {row.isTargeted && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
                               Targeted
                             </span>
                           )}
@@ -439,7 +439,7 @@ export default function DistrictMatrixTable({
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
                             isSelected
                               ? 'bg-indigo-600 text-white shadow-sm'
-                              : 'bg-[var(--elevated-surface)] hover:bg-indigo-500/20 text-[var(--text-secondary)] hover:text-indigo-400 border border-[var(--card-border)]'
+                              : 'bg-[var(--elevated-surface)] hover:bg-indigo-500/20 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 border border-[var(--card-border)]'
                           }`}
                         >
                           <MapPin size={11} />
@@ -461,7 +461,7 @@ export default function DistrictMatrixTable({
           <CheckCircle2 size={14} className="text-emerald-500" />
           <span>Full 30-district microdata calibrated with EICV7 household surveys</span>
         </div>
-        <div className="font-semibold text-indigo-400">
+        <div className="font-semibold text-indigo-700 dark:text-indigo-400">
           Click any row to inspect district scorecard and zoom on map
         </div>
       </div>
