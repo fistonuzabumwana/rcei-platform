@@ -158,9 +158,12 @@ export function generatePolicyBriefPDF({
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.2)
   doc.setTextColor(67, 56, 202) // indigo-700
+  const isTargeted = simulationResult?.targeted_districts_count && simulationResult.targeted_districts_count < 30
   const activeSubsidyText = effectiveSubsidy > 0
-    ? `SCENARIO SIMULATED: ${effectiveSubsidy}% Targeted Clean Cooking Subsidy Intervention`
-    : `SCENARIO SIMULATED: Baseline National Status Quo (0% Clean Fuel Subsidy)`
+    ? (isTargeted 
+        ? `SCENARIO: ${effectiveSubsidy}% Targeted Clean Subsidy (Priority ${simulationResult?.targeted_districts_count} Districts)`
+        : `SCENARIO: ${effectiveSubsidy}% Universal National Clean Cooking Subsidy Intervention`)
+    : `SCENARIO: Baseline National Status Quo (0% Clean Fuel Subsidy)`
   doc.text(activeSubsidyText, margin + 4, currentY + 6.2)
 
   if (simulationResult && simulationResult.net_policy_cost_rwf <= 0) {
@@ -212,7 +215,7 @@ export function generatePolicyBriefPDF({
   const kpisRow1 = [
     { label: 'Households Converted', value: convertedHH, sub: 'Clean cooking adoption', color: rwandaGreen },
     { label: 'Charcoal Displaced / Yr', value: charcoalSaved, sub: 'Deforestation reduced', color: rwandaGold },
-    { label: 'Citizen Charcoal Savings', value: citizenSavings, sub: 'At Kigali ~900 Rwf/kg', color: roseAccent },
+    { label: 'Citizen Total Savings', value: citizenSavings, sub: 'Retail avoided cost (~900 Rwf/kg)', color: roseAccent },
   ]
 
   const kpisRow2 = [
