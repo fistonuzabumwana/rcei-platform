@@ -3,6 +3,7 @@
 
 [![Track](https://img.shields.io/badge/NISR%20Hackathon-Track%203%3A%20Open%20Innovation-blue?style=for-the-badge)](https://statistics.gov.rw)
 [![NST2 Target](https://img.shields.io/badge/NST2%20Target-%3C50%25%20Biomass%20by%202030-emerald?style=for-the-badge)](#-the-challenge--national-priority-nst2--vision-2050)
+[![CI Pipeline](https://github.com/fistonuzabumwana/rcei-platform/actions/workflows/build.yml/badge.svg)](https://github.com/fistonuzabumwana/rcei-platform/actions/workflows/build.yml)
 [![Live App](https://img.shields.io/badge/Live%20Platform-Online-success?style=for-the-badge)](https://rwanda-cleanenergy-insights-nisr.fistonuz.me)
 [![API Docs](https://img.shields.io/badge/FastAPI%20Swagger-Live-indigo?style=for-the-badge)](https://rcei-backend.onrender.com/docs)
 [![License](https://img.shields.io/badge/IP%20Assigned-NISR%202026-amber?style=for-the-badge)](#-intellectual-property--declarations)

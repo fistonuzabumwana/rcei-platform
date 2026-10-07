@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Save, HeartHandshake, ShieldAlert, Sparkles } from 'lucide-react'
 import type { SimulationResult } from '../services/api'
 import ForecastChart from './ForecastChart'
@@ -13,6 +14,11 @@ interface SimulationResultsProps {
 }
 
 export default function SimulationResults({ result }: SimulationResultsProps) {
+  const [carbonPriceUSD, setCarbonPriceUSD] = useState<number>(15)
+
+  const dynamicCarbonRevenueRwf = (result.carbon_credits_earned_tons || 0) * carbonPriceUSD * 1300
+  const dynamicNetPolicyCostRwf = (result.estimated_budget_rwf || 0) - dynamicCarbonRevenueRwf
+
   const avgHouseholdSavings = result.annual_savings_per_household_rwf || 
     (result.total_converted_households > 0 && result.avoided_charcoal_expenditure_rwf
       ? Math.round(result.avoided_charcoal_expenditure_rwf / result.total_converted_households)
@@ -21,7 +27,7 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
   const isTargeted = result.targeted_districts_count !== undefined && result.targeted_districts_count < 30
 
   return (
-    <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full col-span-1 lg:col-span-3">
+    <div id="simulation-results-section" className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full col-span-1 lg:col-span-3">
       {/* Title & Scope Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -139,15 +145,15 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
           <div className="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl"></div>
           <div>
             <p className="text-xs font-bold text-slate-300 dark:text-emerald-200/90 mb-1 uppercase tracking-wide">
-              {result.net_policy_cost_rwf < 0 ? 'Net Policy Profit' : 'Net Policy Cost'}
+              {dynamicNetPolicyCostRwf < 0 ? 'Net Policy Profit' : 'Net Policy Cost'}
             </p>
             <p className="text-3xl font-black text-white relative z-10">
-              {result.net_policy_cost_rwf < 0 ? '+' : ''}{formatMoney(Math.abs(result.net_policy_cost_rwf || 0))} <span className="text-base font-bold text-slate-400">Rwf</span>
+              {dynamicNetPolicyCostRwf < 0 ? '+' : ''}{formatMoney(Math.abs(dynamicNetPolicyCostRwf))} <span className="text-base font-bold text-slate-400">Rwf</span>
             </p>
           </div>
           <div className="text-[11px] text-slate-400 dark:text-emerald-300/80 mt-2 flex justify-between items-end relative z-10">
-            <span>Post-Carbon Balance</span>
-            {result.net_policy_cost_rwf <= 0 && (
+            <span>@{carbonPriceUSD}$ / tCO₂e</span>
+            {dynamicNetPolicyCostRwf <= 0 && (
               <span className="text-[#34D399] font-bold bg-[#34D399]/20 border border-[#34D399]/40 px-1.5 py-0.5 rounded text-[10px]">
                 Fully Funded!
               </span>
@@ -169,11 +175,38 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
               🌍 Article 6 Sovereign Carbon Financing
             </p>
             <p className="text-4xl font-black text-[var(--tint-green-num)] relative z-10 mb-2">
-              +{formatMoney(result.carbon_credit_revenue_rwf || 0)} <span className="text-xl font-bold opacity-80">Rwf</span>
+              +{formatMoney(dynamicCarbonRevenueRwf)} <span className="text-xl font-bold opacity-80">Rwf</span>
             </p>
-            <p className="text-xs text-[var(--text-secondary)] mb-4">
-              Revenue monetized through Article 6 carbon offset transfers.
+            <p className="text-xs text-[var(--text-secondary)] mb-3">
+              Monetized through international Article 6 carbon offset transfers.
             </p>
+
+            {/* Interactive Carbon Price Sensitivity Selector */}
+            <div className="mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] block mb-1.5">
+                Market Valuation Sensitivity:
+              </span>
+              <div className="grid grid-cols-3 gap-1 bg-[var(--card-surface)]/80 p-1 rounded-xl border border-[var(--card-border)] text-[11px] font-bold">
+                {[
+                  { price: 10, label: '$10 Vol.' },
+                  { price: 15, label: '$15 Std.' },
+                  { price: 25, label: '$25 High' },
+                ].map(opt => (
+                  <button
+                    key={opt.price}
+                    type="button"
+                    onClick={() => setCarbonPriceUSD(opt.price)}
+                    className={`py-1 rounded-lg transition-all cursor-pointer text-center ${
+                      carbonPriceUSD === opt.price
+                        ? 'bg-emerald-500 text-white shadow-sm'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           
           <div className="space-y-2.5 text-xs bg-[var(--card-surface)]/85 backdrop-blur-sm p-4 rounded-xl border border-[var(--card-border)] shadow-sm relative z-10 text-[var(--text-primary)]">
@@ -186,8 +219,8 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
               <strong className="text-[var(--text-primary)]">{Math.round(result.carbon_credits_earned_tons || 0).toLocaleString()} tons</strong>
             </p>
             <p className="flex justify-between pt-1 text-[var(--text-secondary)]">
-              <span>Carbon Market Baseline:</span> 
-              <strong className="text-[var(--text-primary)]">$15 USD (~19,500 RWF)</strong>
+              <span>Active Market Price:</span> 
+              <strong className="text-[var(--text-primary)]">${carbonPriceUSD} USD (~{(carbonPriceUSD * 1300).toLocaleString()} RWF/t)</strong>
             </p>
           </div>
         </div>
