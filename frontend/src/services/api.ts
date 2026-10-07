@@ -20,6 +20,9 @@ export interface SimulationResult {
   net_policy_cost_rwf: number;
 
   avoided_charcoal_expenditure_rwf?: number;
+  annual_savings_per_household_rwf?: number;
+  target_districts?: number[];
+  targeted_districts_count?: number;
 
 
   district_impact: Record<string, {

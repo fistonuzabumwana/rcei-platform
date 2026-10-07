@@ -1,4 +1,4 @@
-import { Save } from 'lucide-react'
+import { Save, HeartHandshake, ShieldAlert, Sparkles } from 'lucide-react'
 import type { SimulationResult } from '../services/api'
 import ForecastChart from './ForecastChart'
 
@@ -13,85 +13,142 @@ interface SimulationResultsProps {
 }
 
 export default function SimulationResults({ result }: SimulationResultsProps) {
+  const avgHouseholdSavings = result.annual_savings_per_household_rwf || 
+    (result.total_converted_households > 0 && result.avoided_charcoal_expenditure_rwf
+      ? Math.round(result.avoided_charcoal_expenditure_rwf / result.total_converted_households)
+      : 145000)
+
+  const isTargeted = result.targeted_districts_count !== undefined && result.targeted_districts_count < 30
+
   return (
     <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full col-span-1 lg:col-span-3">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-emerald-500/10 rounded-xl text-[var(--success)] shadow-sm">
-          <Save size={24} />
+      {/* Title & Scope Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-emerald-500/10 rounded-xl text-[var(--success)] shadow-sm">
+            <Save size={24} />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-[var(--text-primary)] uppercase tracking-wider text-xl">
+              Projected Policy Impact
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] font-medium">
+              Socioeconomic transformation modeled with EICV7 microdata & ML Random Forest
+            </p>
+          </div>
         </div>
-        <h3 className="font-extrabold text-[var(--text-primary)] uppercase tracking-wider text-xl">
-          Projected Policy Impact
-        </h3>
+
+        {isTargeted ? (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-bold">
+            <ShieldAlert size={15} />
+            <span>Targeted Scope: {result.targeted_districts_count} Priority Districts Active</span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold">
+            <Sparkles size={15} />
+            <span>Universal National Rollout: All 30 Districts</span>
+          </div>
+        )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      {/* 6 Top Metric Impact Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {/* 1. Households Converted */}
         <div 
-          className="rounded-2xl p-6 border shadow-sm hover-lift"
+          className="rounded-2xl p-5 border shadow-sm hover-lift flex flex-col justify-between"
           style={{ background: 'var(--tint-green-bg)', borderColor: 'var(--tint-green-border)' }}
         >
-          <p className="text-sm font-semibold mb-1 uppercase tracking-wide text-[var(--tint-green-label)]">Households Converted</p>
-          <p className="text-4xl font-black text-[var(--tint-green-num)]">
-            +{Math.round(result.total_converted_households).toLocaleString()}
-          </p>
+          <div>
+            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-[var(--tint-green-label)]">Households Converted</p>
+            <p className="text-3xl font-black text-[var(--tint-green-num)]">
+              +{Math.round(result.total_converted_households).toLocaleString()}
+            </p>
+          </div>
+          <p className="text-[11px] text-[var(--tint-green-label)] opacity-85 mt-2 font-medium">Adopting clean cooking</p>
         </div>
 
         {/* 2. Charcoal Saved Annually */}
         <div 
-          className="rounded-2xl p-6 border shadow-sm hover-lift"
+          className="rounded-2xl p-5 border shadow-sm hover-lift flex flex-col justify-between"
           style={{ background: 'var(--tint-orange-bg)', borderColor: 'var(--tint-orange-border)' }}
         >
-          <p className="text-sm font-semibold mb-1 uppercase tracking-wide text-[var(--tint-orange-label)]">Charcoal Saved Annually</p>
-          <p className="text-4xl font-black text-[var(--tint-orange-num)]">
-            {Math.round(result.total_annual_charcoal_saved_tons).toLocaleString()} <span className="text-xl font-bold opacity-80">tons</span>
-          </p>
+          <div>
+            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-[var(--tint-orange-label)]">Charcoal Displaced / Yr</p>
+            <p className="text-3xl font-black text-[var(--tint-orange-num)]">
+              {Math.round(result.total_annual_charcoal_saved_tons).toLocaleString()} <span className="text-base font-bold opacity-80">tons</span>
+            </p>
+          </div>
+          <p className="text-[11px] text-[var(--tint-orange-label)] opacity-85 mt-2 font-medium">Deforestation avoided</p>
         </div>
         
-        {/* 3. Household Charcoal Savings */}
+        {/* 3. National Household Charcoal Savings */}
         {result.avoided_charcoal_expenditure_rwf !== undefined && (
           <div 
-            className="rounded-2xl p-6 border shadow-sm hover-lift"
+            className="rounded-2xl p-5 border shadow-sm hover-lift flex flex-col justify-between"
             style={{ background: 'var(--tint-red-bg)', borderColor: 'var(--tint-red-border)' }}
           >
-            <p className="text-sm font-semibold mb-1 uppercase tracking-wide text-[var(--tint-red-label)]">Household Charcoal Savings</p>
-            <p className="text-4xl font-black text-[var(--tint-red-num)]">
-              {formatMoney(result.avoided_charcoal_expenditure_rwf)} <span className="text-xl font-bold opacity-80">Rwf</span>
-            </p>
-            <p className="text-xs text-[var(--tint-red-label)] opacity-85 mt-2">
-              Based on Kigali average price of ~900 RWF/kg.
+            <div>
+              <p className="text-xs font-bold mb-1 uppercase tracking-wide text-[var(--tint-red-label)]">Citizen Total Savings</p>
+              <p className="text-3xl font-black text-[var(--tint-red-num)]">
+                {formatMoney(result.avoided_charcoal_expenditure_rwf)} <span className="text-base font-bold opacity-80">Rwf</span>
+              </p>
+            </div>
+            <p className="text-[11px] text-[var(--tint-red-label)] opacity-85 mt-2 font-medium">
+              At Kigali ~900 Rwf/kg price
             </p>
           </div>
         )}
-        
-        {/* 4. Gross Policy Cost */}
+
+        {/* 4. VUP Social Protection: Savings Per Household */}
         <div 
-          className="rounded-2xl p-6 border shadow-sm hover-lift"
-          style={{ background: 'var(--tint-indigo-bg)', borderColor: 'var(--tint-indigo-border)' }}
+          className="rounded-2xl p-5 border shadow-sm hover-lift flex flex-col justify-between"
+          style={{ background: 'var(--elevated-surface)', borderColor: 'var(--card-border)' }}
         >
-          <p className="text-sm font-semibold mb-1 uppercase tracking-wide text-[var(--tint-indigo-label)]">Gross Policy Cost</p>
-          <p className="text-4xl font-black text-[var(--tint-indigo-num)]">
-            {formatMoney(result.estimated_budget_rwf || 0)} <span className="text-xl font-bold opacity-80">Rwf</span>
+          <div>
+            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-indigo-400 flex items-center gap-1">
+              <HeartHandshake size={13} /> Relief Per Family
+            </p>
+            <p className="text-3xl font-black text-[var(--text-primary)]">
+              {formatMoney(avgHouseholdSavings)} <span className="text-base font-bold text-[var(--text-secondary)]">Rwf</span>
+            </p>
+          </div>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-2 font-medium">
+            Annual disposable income boost
           </p>
         </div>
         
-        {/* 5. Net Policy Profit / Cost */}
+        {/* 5. Gross Policy Cost */}
         <div 
-          className="rounded-2xl p-6 border shadow-lg hover-lift flex flex-col justify-between relative overflow-hidden"
-          style={{ background: 'var(--net-profit-bg)', borderColor: 'var(--net-profit-border)' }}
+          className="rounded-2xl p-5 border shadow-sm hover-lift flex flex-col justify-between"
+          style={{ background: 'var(--tint-indigo-bg)', borderColor: 'var(--tint-indigo-border)' }}
         >
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
           <div>
-            <p className="text-sm font-semibold text-slate-300 dark:text-emerald-200/90 mb-1 uppercase tracking-wide">
-              {result.net_policy_cost_rwf < 0 ? 'Net Policy Profit' : 'Net Policy Cost'}
-            </p>
-            <p className="text-4xl font-black text-white relative z-10">
-              {result.net_policy_cost_rwf < 0 ? '+' : ''}{formatMoney(Math.abs(result.net_policy_cost_rwf || 0))} <span className="text-xl font-bold text-slate-400">Rwf</span>
+            <p className="text-xs font-bold mb-1 uppercase tracking-wide text-[var(--tint-indigo-label)]">Gross Policy Cost</p>
+            <p className="text-3xl font-black text-[var(--tint-indigo-num)]">
+              {formatMoney(result.estimated_budget_rwf || 0)} <span className="text-base font-bold opacity-80">Rwf</span>
             </p>
           </div>
-          <div className="text-xs text-slate-400 dark:text-emerald-300/80 mt-4 flex justify-between items-end relative z-10">
-            <span>Includes Carbon Credits</span>
+          <p className="text-[11px] text-[var(--tint-indigo-label)] opacity-85 mt-2 font-medium">Govt subsidy budget</p>
+        </div>
+        
+        {/* 6. Net Policy Profit / Cost */}
+        <div 
+          className="rounded-2xl p-5 border shadow-lg hover-lift flex flex-col justify-between relative overflow-hidden"
+          style={{ background: 'var(--net-profit-bg)', borderColor: 'var(--net-profit-border)' }}
+        >
+          <div className="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl"></div>
+          <div>
+            <p className="text-xs font-bold text-slate-300 dark:text-emerald-200/90 mb-1 uppercase tracking-wide">
+              {result.net_policy_cost_rwf < 0 ? 'Net Policy Profit' : 'Net Policy Cost'}
+            </p>
+            <p className="text-3xl font-black text-white relative z-10">
+              {result.net_policy_cost_rwf < 0 ? '+' : ''}{formatMoney(Math.abs(result.net_policy_cost_rwf || 0))} <span className="text-base font-bold text-slate-400">Rwf</span>
+            </p>
+          </div>
+          <div className="text-[11px] text-slate-400 dark:text-emerald-300/80 mt-2 flex justify-between items-end relative z-10">
+            <span>Post-Carbon Balance</span>
             {result.net_policy_cost_rwf <= 0 && (
-              <span className="text-[#34D399] font-bold bg-[#34D399]/15 border border-[#34D399]/30 px-2 py-1 rounded-md">
+              <span className="text-[#34D399] font-bold bg-[#34D399]/20 border border-[#34D399]/40 px-1.5 py-0.5 rounded text-[10px]">
                 Fully Funded!
               </span>
             )}
@@ -99,26 +156,43 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
         </div>
       </div>
       
+      {/* Secondary Row: Carbon Breakdown & 2030 Trajectory Forecast */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Carbon Credit Revenue Breakdown */}
         <div 
-          className="lg:col-span-1 rounded-2xl p-6 border shadow-sm hover-lift relative overflow-hidden flex flex-col justify-center"
+          className="lg:col-span-1 rounded-2xl p-6 border shadow-sm hover-lift relative overflow-hidden flex flex-col justify-between"
           style={{ background: 'var(--tint-green-bg)', borderColor: 'var(--tint-green-border)' }}
         >
           <div className="absolute -right-4 -top-4 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
-          <p className="text-sm font-semibold text-[var(--tint-green-label)] mb-2 uppercase tracking-wide flex items-center gap-2">
-            🌍 Carbon Credit Revenue Breakdown
-          </p>
-          <p className="text-5xl font-black text-[var(--tint-green-num)] relative z-10 mb-4">
-            +{formatMoney(result.carbon_credit_revenue_rwf || 0)} <span className="text-2xl font-bold opacity-80">Rwf</span>
-          </p>
-          <div className="space-y-3 mt-2 text-sm bg-[var(--card-surface)]/80 backdrop-blur-sm p-4 rounded-xl border border-[var(--card-border)] shadow-sm relative z-10 text-[var(--text-primary)]">
-            <p className="flex justify-between border-b border-[var(--divider)] pb-2 text-[var(--text-secondary)]"><span>Total Charcoal Saved:</span> <strong className="text-[var(--text-primary)]">{Math.round(result.total_annual_charcoal_saved_tons).toLocaleString()} tons</strong></p>
-            <p className="flex justify-between border-b border-[var(--divider)] pb-2 text-[var(--text-secondary)]"><span>CO₂e Avoided (3x factor):</span> <strong className="text-[var(--text-primary)]">{Math.round(result.carbon_credits_earned_tons || 0).toLocaleString()} tons</strong></p>
-            <p className="flex justify-between pt-1 text-[var(--text-secondary)]"><span>Market Price per Ton:</span> <strong className="text-[var(--text-primary)]">$15 USD (~19,500 RWF)</strong></p>
+          <div>
+            <p className="text-xs font-bold text-[var(--tint-green-label)] mb-2 uppercase tracking-wide flex items-center gap-2">
+              🌍 Article 6 Sovereign Carbon Financing
+            </p>
+            <p className="text-4xl font-black text-[var(--tint-green-num)] relative z-10 mb-2">
+              +{formatMoney(result.carbon_credit_revenue_rwf || 0)} <span className="text-xl font-bold opacity-80">Rwf</span>
+            </p>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">
+              Revenue monetized through Article 6 carbon offset transfers.
+            </p>
+          </div>
+          
+          <div className="space-y-2.5 text-xs bg-[var(--card-surface)]/85 backdrop-blur-sm p-4 rounded-xl border border-[var(--card-border)] shadow-sm relative z-10 text-[var(--text-primary)]">
+            <p className="flex justify-between border-b border-[var(--divider)] pb-2 text-[var(--text-secondary)]">
+              <span>Displaced Charcoal:</span> 
+              <strong className="text-[var(--text-primary)]">{Math.round(result.total_annual_charcoal_saved_tons).toLocaleString()} tons</strong>
+            </p>
+            <p className="flex justify-between border-b border-[var(--divider)] pb-2 text-[var(--text-secondary)]">
+              <span>Avoided CO₂e (3x factor):</span> 
+              <strong className="text-[var(--text-primary)]">{Math.round(result.carbon_credits_earned_tons || 0).toLocaleString()} tons</strong>
+            </p>
+            <p className="flex justify-between pt-1 text-[var(--text-secondary)]">
+              <span>Carbon Market Baseline:</span> 
+              <strong className="text-[var(--text-primary)]">$15 USD (~19,500 RWF)</strong>
+            </p>
           </div>
         </div>
 
+        {/* 2030 Forecast Chart */}
         <div className="lg:col-span-2">
           {result.forecast && result.forecast.length > 0 && (
             <ForecastChart data={result.forecast} />
