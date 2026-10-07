@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { fetchDistrictMetrics, simulateSubsidy } from './services/api'
 import type { DistrictMetric } from './services/api'
-import { Activity, Flame, Zap, Download } from 'lucide-react'
+import { Activity, Flame, Zap, Download, FileSpreadsheet } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
 import SimulationResults from './components/SimulationResults'
 import DistrictLeaderboard from './components/DistrictLeaderboard'
 import ThemeToggle from './components/ThemeToggle'
 import { generatePolicyBriefPDF } from './services/pdfExport'
+import { exportDistrictsToCSV } from './services/csvExport'
 
 function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
@@ -104,6 +105,14 @@ function App() {
                 {loading ? 'Connecting...' : error ? 'API Disconnected' : 'Live Data Connected'}
               </span>
             </div>
+            <button 
+              onClick={() => exportDistrictsToCSV(metrics, simulationResult)}
+              className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
+              title="Download raw 30-district baseline & simulation dataset in CSV format"
+            >
+              <FileSpreadsheet size={18} className="text-emerald-500" />
+              <span>Export CSV</span>
+            </button>
             <button 
               onClick={handleExportPolicyBrief}
               disabled={isExporting}
