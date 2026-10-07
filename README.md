@@ -83,45 +83,54 @@ The Government of Rwanda, through **NST2 (2024–2029)**, has set a legally bind
 └──────────────────────────────────────┴──────────────────────────────────────┘
 ```
 
-### 1. 🗺️ Interactive District Choropleth Map (Leaflet)
+### 1. 🗺️ Interactive District Choropleth Map with Scorecard Drawer (Leaflet)
 - High-precision GeoJSON vector polygons for all **30 districts of Rwanda**.
 - Color-coded reliance tiers:
   - 🔴 **Critical:** >90% Biomass Reliance
   - 🟠 **High:** 75% – 90% Reliance
   - 🟡 **Moderate:** 50% – 75% Reliance
   - 🟢 **Sustainable:** <50% Reliance (NST2 Target Reached)
-- **Live Dynamic Recoloring:** When you slide the subsidy simulator, the map dynamically re-renders in real-time, displaying how districts transition from red/orange to green under policy intervention.
+- **Live Dynamic Recoloring:** When you slide the subsidy simulator or pick a targeted cluster, the map dynamically re-renders in real-time, displaying how districts transition under policy intervention.
+- **Interactive District Scorecard Drawer:** Clicking any district opens a glassmorphic scorecard displaying national urgency ranking (#1 to #30), before-and-after biomass drop, converted households, charcoal saved, and EICV7 poverty rates.
 - **Dedicated Fullscreen Mode:** Seamless full-screen view that intelligently hides headers and cards for presentations and GIS analysis.
 
-### 2. 🧮 Socioeconomic Policy Simulator & Machine Learning Adoption Model
-- Users can simulate any government subsidy intervention between **0% and 100%** on clean cooking starter packages (LPG cylinder, smart meter, stove).
-- Backed by a **Random Forest Machine Learning model** (`backend/app/core/adoption_model.pkl`) trained on EICV7 microdata:
-  - Models price-elasticity based on whether a household is extreme-poor (`pov_jan = 3`), poor (`pov_jan = 2`), or non-poor, combined with urban/rural status.
-  - Vulnerable rural districts have higher price sensitivity, meaning targeted subsidies achieve significantly greater conversion elasticity per Franc spent.
+### 2. 🎛️ Policy Simulator with Targeting Clusters & 1-Click Presets
+- **Geographic Targeting Clusters:** Rather than wasteful blanket subsidies, policymakers can isolate interventions:
+  - 🌐 **Nationwide (All 30 Districts):** Universal rollout.
+  - 🚨 **Top 10 Priority (High Poverty & Biomass):** Gisagara, Nyaruguru, Nyamagabe, Gicumbi, Burera, Ruhango, Ngororero, Rutsiro, Karongi, Nyanza.
+  - 🏙️ **Kigali Urban Transition:** Nyarugenge, Gasabo, Kicukiro (accelerates urban charcoal bans).
+  - 🌾 **Rural Provinces (27 Districts):** Focused capital for non-Kigali provinces.
+- **1-Click Policy Presets:** Instantly evaluate Conservative (20%), NST2 Recommended (40%), and Aggressive (70%) scenarios.
+- **Predictive ML Engine:** Backed by a **Random Forest Regressor** (`backend/app/core/adoption_model.pkl`) trained on EICV7 microdata, accounting for non-linear price sensitivity across poverty tiers.
 
-### 3. 💵 Citizen Economic Welfare (Avoided Charcoal Expenditure)
-- Charcoal prices in urban and peri-urban Rwanda (e.g., Kigali) hover around **~900 Rwf/kg** (900,000 Rwf/ton).
-- The platform calculates the exact annual monetary savings retained by Rwandan households due to avoided charcoal purchases, demonstrating immediate poverty alleviation and improved disposable income.
+### 3. 🏆 District Transition Leaderboard
+- Integrated dashboard component ranking the **Top 5 Critical Urgency Districts** vs. **Top 5 Clean Energy Leaders**.
+- Fully synchronized with the Leaflet map: clicking any district in the leaderboard smoothly zooms and opens its scorecard on the map.
 
-### 4. 🌍 Article 6 Carbon Credit & Sovereign Climate Finance
+### 4. 💵 Citizen Economic Welfare & VUP Social Protection Synergy
+- Charcoal prices in urban and peri-urban Rwanda hover around **~900 Rwf/kg** (900,000 Rwf/ton).
+- **Citizen Total Savings:** Annual avoided expenditure across all converted households.
+- **VUP Social Protection Relief Per Family:** Quantifies direct annual disposable cash freed per household (**~154,000 Rwf / family / year**), demonstrating cross-track synergy with social protection (VUP) and poverty alleviation.
+
+### 5. 🌍 Article 6 Carbon Credit & Sovereign Climate Finance
 - Every 1 ton of charcoal saved avoids approximately **3.0 tons of CO2e** emissions.
 - Monitizes avoided emissions at the voluntary and compliance carbon market rate of **$15 USD / ton CO2e** (~19,500 Rwf/ton).
 - Computes **Net Fiscal Policy Impact**:
   $$\text{Net Fiscal Balance} = \text{Gross Government Subsidy Budget} - \text{Carbon Credit Sovereign Revenue}$$
   - **Fiscal Breakthrough:** At moderate to high subsidies, international carbon finance can completely pay for the government subsidy, generating a **sovereign net fiscal surplus**!
 
-### 5. 📊 2030 Multi-Year Trajectory Forecasting
+### 6. 📊 2030 Multi-Year Trajectory Forecasting
 - Projects national clean cooking momentum from **2024 through 2030**.
 - Visualizes **Business as Usual (BAU)** vs. **With Policy Subsidy** against the **NST2 <50% Threshold line** using a responsive Recharts area graph.
 
-### 6. 📄 Reconstructed Executive-Grade PDF Policy Brief Generator
+### 7. 📄 Reconstructed Executive-Grade PDF Policy Brief Generator
 - Designed from scratch with `jspdf` and `jspdf-autotable`, abandoning generic browser `window.print()` print screens.
 - Generates an official, publication-quality **2-page A4 Policy Brief**:
-  - **Page 1:** Rwandan national flag ribbon (Blue, Yellow, Green), official RCEI seal, MININFRA/NISR institutional header, executive summary card, active scenario callout, 6 KPI cards, 2030 trajectory forecast table, and 3 strategic policy recommendations.
+  - **Page 1:** Rwandan national flag ribbon (Blue, Yellow, Green), official RCEI seal, MININFRA/NISR institutional header, executive summary card, active scenario callout (reflecting targeted clusters), 6 KPI cards, 2030 trajectory forecast table, and 3 strategic policy recommendations.
   - **Page 2:** Complete 30-district transition matrix sorted by biomass reliance, showing poverty rates, households, baseline vs projected biomass rates, conversions, and displaced charcoal tons, plus EICV7 methodology notes.
   - Instantly downloads as `Rwanda_NST2_Policy_Brief_[X]pct_Subsidy.pdf`.
 
-### 7. 🌓 Premium Dark & Light Theme System
+### 8. 🌓 Premium Dark & Light Theme System
 - Complete semantic design system utilizing CSS custom properties.
 - Features soft glassmorphism, glowing live API indicator dots, tailored accessible palettes, and instant zero-latency theme switching.
 
