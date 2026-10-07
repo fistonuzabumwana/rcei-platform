@@ -5,6 +5,7 @@ import { Activity, Flame, Zap, Download } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
 import SimulationResults from './components/SimulationResults'
+import DistrictLeaderboard from './components/DistrictLeaderboard'
 import ThemeToggle from './components/ThemeToggle'
 import { generatePolicyBriefPDF } from './services/pdfExport'
 
@@ -13,13 +14,15 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-
   
   // Track simulation results to update map
   const [simulationResult, setSimulationResult] = useState<any>(null)
   
   // Track map fullscreen state to hide conflicting dashboard elements
   const [isMapFullscreen, setIsMapFullscreen] = useState(false)
+
+  // Track currently selected district for inspection on map and leaderboard
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDistrictMetrics().then(data => {
@@ -177,7 +180,7 @@ function App() {
         return (
           <>
             <div className={isMapFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : "mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8"}>
-              <div className={isMapFullscreen ? "w-full h-full p-0" : "lg:col-span-2 glass-panel p-2 relative z-0"}>
+              <div id="map-view-container" className={isMapFullscreen ? "w-full h-full p-0" : "lg:col-span-2 glass-panel p-2 relative z-0"}>
                 {simulationResult && !isMapFullscreen && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-indigo-600 text-white px-4 py-1.5 rounded-full shadow-lg font-bold text-sm tracking-wide shadow-indigo-500/40 animate-bounce">
                     Live Projected View Active
@@ -185,8 +188,11 @@ function App() {
                 )}
                 <MapView 
                   metrics={displayMetrics} 
+                  simulationResult={simulationResult}
                   isFullscreen={isMapFullscreen}
                   onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+                  selectedDistrictId={selectedDistrictId}
+                  onSelectDistrict={setSelectedDistrictId}
                 />
               </div>
               {!isMapFullscreen && (
@@ -195,8 +201,26 @@ function App() {
                 </div>
               )}
             </div>
+
             {simulationResult && !isMapFullscreen && (
               <SimulationResults result={simulationResult} />
+            )}
+
+            {!isMapFullscreen && (
+              <div className="mt-8">
+                <DistrictLeaderboard 
+                  metrics={metrics}
+                  simulationResult={simulationResult}
+                  selectedDistrictId={selectedDistrictId}
+                  onSelectDistrict={(id) => {
+                    setSelectedDistrictId(id);
+                    const mapEl = document.getElementById('map-view-container');
+                    if (mapEl) {
+                      mapEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                />
+              </div>
             )}
           </>
         );

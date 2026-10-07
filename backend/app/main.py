@@ -123,6 +123,13 @@ def simulate_policy(req: SimulationRequest):
                 "converted_households": int(potential_conversions),
                 "charcoal_saved_tons": round(charcoal_saved, 1)
             }
+        else:
+            results[dist_id] = {
+                "projected_biomass_rate": data["biomass_reliance_rate"],
+                "projected_clean_rate": data["clean_energy_rate"],
+                "converted_households": 0,
+                "charcoal_saved_tons": 0.0
+            }
             
     # Assuming average clean cooking kit (gas + stove) costs 50,000 RWF
     kit_cost_rwf = 50000
@@ -138,12 +145,10 @@ def simulate_policy(req: SimulationRequest):
     # Do not clamp to 0, if revenue > budget, it's negative (Profit!)
     net_policy_cost_rwf = total_budget_rwf - carbon_credit_revenue_rwf
     
-
     # Citizen Economic Impact: Avoided Charcoal Purchases
     # Average Kigali market price: 900 RWF per kg -> 900,000 RWF per ton
     avoided_charcoal_expenditure_rwf = annual_charcoal_saved_tons * 900000
-    
-
+    avg_savings_per_hh_rwf = round(avoided_charcoal_expenditure_rwf / total_converted_households, 0) if total_converted_households > 0 else 0
 
     # 2030 Time-Series Forecasting
     total_hh = sum(d["estimated_households"] for d in DISTRICT_METRICS.values())
@@ -167,16 +172,16 @@ def simulate_policy(req: SimulationRequest):
             
     return {
         "applied_subsidy": req.subsidy_percentage,
+        "target_districts": req.target_districts,
+        "targeted_districts_count": len(req.target_districts) if req.target_districts else len(DISTRICT_METRICS),
         "total_converted_households": int(total_converted_households),
         "total_annual_charcoal_saved_tons": round(annual_charcoal_saved_tons, 1),
         "estimated_budget_rwf": total_budget_rwf,
         "carbon_credits_earned_tons": round(carbon_credits_earned_tons, 1),
         "carbon_credit_revenue_rwf": carbon_credit_revenue_rwf,
         "net_policy_cost_rwf": net_policy_cost_rwf,
-
         "avoided_charcoal_expenditure_rwf": avoided_charcoal_expenditure_rwf,
-
-
+        "annual_savings_per_household_rwf": avg_savings_per_hh_rwf,
         "district_impact": results,
         "forecast": forecast
     }
