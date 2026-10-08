@@ -95,7 +95,7 @@ The Government of Rwanda, through **NST2 (2024–2029)**, has set a legally bind
 │ • Click row to inspect on map        │ • Live pulsing status beacon         │
 ├──────────────────────────────────────┼──────────────────────────────────────┤
 │ 📈 2030 Multi-Year Forecast Chart    │ 📄 Reconstructed PDF Policy Brief    │
-│ • 2024–2030 trajectory trajectory    │ • Publication-grade 2-page A4 vector │
+│ • 2024–2030 trajectory projection    │ • Publication-grade 2-page A4 vector │
 │ • BAU vs Policy vs NST2 <50% target  │ • Official MININFRA/NISR formatting  │
 │ • Threshold crossing estimation      │ • Instant download (no print dialog) │
 └──────────────────────────────────────┴──────────────────────────────────────┘
