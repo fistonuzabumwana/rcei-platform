@@ -53,8 +53,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Check Syntax (Dry Run)
+    - name: Run Backend Tests
       run: |
-        # Simply compile the python files to catch syntax errors since we don't have pytest setup yet
-        python -m compileall app/
-        python -m compileall pipeline/
+        python -m pytest tests/ -v
+
