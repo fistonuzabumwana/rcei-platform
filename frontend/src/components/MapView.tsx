@@ -285,13 +285,17 @@ export default function MapView({
             </div>
 
             {/* Longitudinal 2017 -> 2022 -> 2024 progression */}
-            {selectedData.eicv5_2017_clean_rate !== undefined && (
+            {(selectedData.eicv5_2017_clean_rate !== undefined || selectedData.census_2022_clean_rate !== undefined || selectedData.census_2022_biomass_rate !== undefined) && (
               <div className="p-2 rounded-lg bg-[var(--elevated-surface)] border border-[var(--card-border)] text-[10px]">
                 <span className="text-[var(--text-muted)] block font-semibold mb-0.5">10-Yr Clean Energy Progression:</span>
                 <div className="flex items-center justify-between font-bold text-[var(--text-primary)]">
-                  <span>'17: {selectedData.eicv5_2017_clean_rate.toFixed(1)}%</span>
+                  <span>'17: {selectedData.eicv5_2017_clean_rate !== undefined ? `${selectedData.eicv5_2017_clean_rate.toFixed(1)}%` : '--'}</span>
                   <span>&rarr;</span>
-                  <span>'22: {(selectedData.census_2022_clean_rate ?? (100 - (selectedData.census_2022_biomass_rate ?? 95))).toFixed(1)}%</span>
+                  <span>'22: {selectedData.census_2022_clean_rate !== undefined
+                    ? `${selectedData.census_2022_clean_rate.toFixed(1)}%`
+                    : (selectedData.census_2022_biomass_rate !== undefined
+                        ? `${(100 - selectedData.census_2022_biomass_rate).toFixed(1)}%`
+                        : '--')}</span>
                   <span>&rarr;</span>
                   <span className="text-indigo-600 dark:text-indigo-400">'24: {selectedData.clean_energy_rate.toFixed(1)}%</span>
                 </div>

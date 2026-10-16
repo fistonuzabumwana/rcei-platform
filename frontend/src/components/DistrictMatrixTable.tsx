@@ -119,19 +119,19 @@ export default function DistrictMatrixTable({
         charcoalSaved,
         convertedHouseholds,
         censusBiomass: data.census_2022_biomass_rate,
-        censusClean: data.census_2022_clean_rate ?? (data.census_2022_biomass_rate ? 100 - data.census_2022_biomass_rate : undefined),
+        censusClean: data.census_2022_clean_rate ?? (data.census_2022_biomass_rate !== undefined ? 100 - data.census_2022_biomass_rate : undefined),
         annualDecline: data.empirical_annual_biomass_reduction,
         eicv5Biomass: data.eicv5_2017_biomass_rate,
-        eicv5Clean: data.eicv5_2017_clean_rate ?? (data.eicv5_2017_biomass_rate ? 100 - data.eicv5_2017_biomass_rate : 0.0),
-        historical7yrGain: data.historical_7yr_clean_gain ?? 0.0,
-        historical7yrDrop: data.historical_7yr_biomass_reduction ?? 0.0,
-        biogasViablePct: data.biogas_viable_ag_hh_pct ?? 0.0,
-        institutionalFarms: data.institutional_cattle_farms ?? 0,
-        bioslurryTons: data.est_bioslurry_fertilizer_tons_year ?? 0,
-        cropResidueTons: data.crop_residue_feedstock_tons ?? 0,
-        pelletPotentialTons: data.pellet_potential_tons ?? 0,
-        recommendedPathway: data.recommended_clean_pathway ?? 'Advanced Biomass Gasifier Cookstoves (Tier 4)',
-        pathwayTag: data.pathway_tag ?? 'Gasifier Biomass',
+        eicv5Clean: data.eicv5_2017_clean_rate,
+        historical7yrGain: data.historical_7yr_clean_gain,
+        historical7yrDrop: data.historical_7yr_biomass_reduction,
+        biogasViablePct: data.biogas_viable_ag_hh_pct,
+        institutionalFarms: data.institutional_cattle_farms,
+        bioslurryTons: data.est_bioslurry_fertilizer_tons_year,
+        cropResidueTons: data.crop_residue_feedstock_tons,
+        pelletPotentialTons: data.pellet_potential_tons,
+        recommendedPathway: data.recommended_clean_pathway,
+        pathwayTag: data.pathway_tag,
         isTargeted: simulationResult?.target_districts?.includes(parseInt(id, 10)) ?? false
       }
     })
@@ -148,6 +148,9 @@ export default function DistrictMatrixTable({
       .sort((a, b) => {
         let valA = a[sortField]
         let valB = b[sortField]
+
+        if (valA === undefined || valA === null) return 1
+        if (valB === undefined || valB === null) return -1
 
         if (typeof valA === 'string' && typeof valB === 'string') {
           return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
@@ -423,18 +426,26 @@ export default function DistrictMatrixTable({
                         <div className="space-y-2 my-3 text-[11px]">
                           <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--card-surface)] border border-[var(--card-border)]/50">
                             <span className="text-[10px] text-[var(--text-muted)]">2017 EICV5:</span>
-                            <span className="font-bold">{row.eicv5Clean.toFixed(1)}% Clean</span>
+                            <span className="font-bold">{row.eicv5Clean !== undefined ? `${row.eicv5Clean.toFixed(1)}% Clean` : '--'}</span>
                           </div>
                           <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--card-surface)] border border-[var(--card-border)]/50">
                             <span className="text-[10px] text-[var(--text-muted)]">2022 Census:</span>
-                            <span className="font-bold">{(row.censusClean ?? (100 - (row.censusBiomass ?? 95))).toFixed(1)}% Clean</span>
+                            <span className="font-bold">{row.censusClean !== undefined ? `${row.censusClean.toFixed(1)}% Clean` : '--'}</span>
                           </div>
                           <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--card-surface)] border border-[var(--card-border)]/50">
                             <span className="text-[10px] text-[var(--text-muted)]">2024 EICV7:</span>
                             <span className="font-bold text-indigo-500">{row.baselineClean.toFixed(1)}% Clean</span>
                           </div>
-                          <div className="text-[10px] text-emerald-500 font-bold px-1">
-                            7-Yr Net Gain: +{row.historical7yrGain.toFixed(1)} pp
+                          <div className="text-[10px] font-bold px-1">
+                            {row.historical7yrGain === undefined ? (
+                              <span className="text-[var(--text-muted)]">7-Yr Net Gain: --</span>
+                            ) : row.historical7yrGain > 0 ? (
+                              <span className="text-emerald-500">7-Yr Net Gain: +{row.historical7yrGain.toFixed(1)} pp</span>
+                            ) : row.historical7yrGain < 0 ? (
+                              <span className="text-rose-500">7-Yr Net Gain: {row.historical7yrGain.toFixed(1)} pp</span>
+                            ) : (
+                              <span className="text-[var(--text-muted)]">7-Yr Net Gain: 0.0 pp</span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -444,24 +455,30 @@ export default function DistrictMatrixTable({
                           <div className="p-2 rounded-lg bg-[var(--card-surface)] border border-[var(--card-border)]/50">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-[10px] text-[var(--text-muted)]">Biogas Viable Ag-HHs:</span>
-                              <span className="font-bold text-amber-500">{row.biogasViablePct.toFixed(1)}%</span>
+                              <span className="font-bold text-amber-500">{row.biogasViablePct !== undefined ? `${row.biogasViablePct.toFixed(1)}%` : '--'}</span>
                             </div>
                             <span className="text-[9px] text-[var(--text-muted)]">
-                              Bio-slurry fertilizer: ~{row.bioslurryTons.toLocaleString()} t/yr
+                              Bio-slurry fertilizer: {row.bioslurryTons !== undefined && row.bioslurryTons > 0 ? `~${row.bioslurryTons.toLocaleString()} t/yr` : '--'}
                             </span>
                           </div>
                           <div className="p-2 rounded-lg bg-[var(--card-surface)] border border-[var(--card-border)]/50">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-[10px] text-[var(--text-muted)]">Crop Residue Feedstock:</span>
-                              <span className="font-bold text-emerald-500">{Math.round(row.cropResidueTons).toLocaleString()} t</span>
+                              <span className="font-bold text-emerald-500">{row.cropResidueTons !== undefined && row.cropResidueTons > 0 ? `${Math.round(row.cropResidueTons).toLocaleString()} t` : '--'}</span>
                             </div>
                             <span className="text-[9px] text-[var(--text-muted)]">
-                              Pellet capacity: ~{Math.round(row.pelletPotentialTons).toLocaleString()} t/yr
+                              Pellet capacity: {row.pelletPotentialTons !== undefined && row.pelletPotentialTons > 0 ? `~${Math.round(row.pelletPotentialTons).toLocaleString()} t/yr` : '--'}
                             </span>
                           </div>
-                          <div className="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                            {row.pathwayTag}: {row.recommendedPathway}
-                          </div>
+                          {row.recommendedPathway ? (
+                            <div className="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                              {row.pathwayTag ? `${row.pathwayTag}: ` : ''}{row.recommendedPathway}
+                            </div>
+                          ) : (
+                            <div className="px-2 py-1 rounded bg-[var(--card-surface)] border border-[var(--card-border)]/50 text-[10px] text-[var(--text-muted)]">
+                              Pathway: --
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -676,18 +693,30 @@ export default function DistrictMatrixTable({
                       {perspective === 'velocity' && (
                         <>
                           <td className="py-3 px-4 text-right font-medium">
-                            {row.eicv5Clean.toFixed(1)}%
+                            {row.eicv5Clean !== undefined ? `${row.eicv5Clean.toFixed(1)}%` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">
-                            {(row.censusClean ?? (100 - (row.censusBiomass ?? 95))).toFixed(1)}%
+                            {row.censusClean !== undefined ? `${row.censusClean.toFixed(1)}%` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-bold text-indigo-500">
                             {row.baselineClean.toFixed(1)}%
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-bold text-xs bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                              +{row.historical7yrGain.toFixed(1)} pp
-                            </span>
+                            {row.historical7yrGain === undefined ? (
+                              <span className="text-[var(--text-muted)] font-medium">--</span>
+                            ) : row.historical7yrGain > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-bold text-xs bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                +{row.historical7yrGain.toFixed(1)} pp
+                              </span>
+                            ) : row.historical7yrGain < 0 ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-bold text-xs bg-rose-500/15 text-rose-500 border border-rose-500/30">
+                                {row.historical7yrGain.toFixed(1)} pp
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-medium text-xs text-[var(--text-muted)]">
+                                0.0 pp
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">
                             {row.annualDecline !== undefined ? `↓ ${row.annualDecline.toFixed(1)}%/yr` : '--'}
@@ -701,24 +730,28 @@ export default function DistrictMatrixTable({
                       {perspective === 'bioenergy' && (
                         <>
                           <td className="py-3 px-4 text-right font-bold text-amber-500">
-                            {row.biogasViablePct.toFixed(1)}%
+                            {row.biogasViablePct !== undefined ? `${row.biogasViablePct.toFixed(1)}%` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">
-                            {row.institutionalFarms > 0 ? `${row.institutionalFarms} farms` : '--'}
+                            {row.institutionalFarms !== undefined && row.institutionalFarms > 0 ? `${row.institutionalFarms} farms` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">
-                            {row.bioslurryTons > 0 ? `${row.bioslurryTons.toLocaleString()} t/yr` : '--'}
+                            {row.bioslurryTons !== undefined && row.bioslurryTons > 0 ? `${row.bioslurryTons.toLocaleString()} t/yr` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-bold text-emerald-500">
-                            {Math.round(row.cropResidueTons).toLocaleString()} t
+                            {row.cropResidueTons !== undefined && row.cropResidueTons > 0 ? `${Math.round(row.cropResidueTons).toLocaleString()} t` : '--'}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">
-                            {Math.round(row.pelletPotentialTons).toLocaleString()} t
+                            {row.pelletPotentialTons !== undefined && row.pelletPotentialTons > 0 ? `${Math.round(row.pelletPotentialTons).toLocaleString()} t` : '--'}
                           </td>
                           <td className="py-3 px-4 text-left">
-                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 max-w-[200px] truncate" title={row.recommendedPathway}>
-                              {row.pathwayTag}
-                            </span>
+                            {row.pathwayTag ? (
+                              <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 max-w-[200px] truncate" title={row.recommendedPathway || ''}>
+                                {row.pathwayTag}
+                              </span>
+                            ) : (
+                              <span className="text-[var(--text-muted)] font-medium">--</span>
+                            )}
                           </td>
                         </>
                       )}
