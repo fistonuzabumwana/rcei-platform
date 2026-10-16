@@ -90,6 +90,11 @@ function App() {
       setIsFallbackData(isFallback)
       setLoading(false)
 
+      // Auto-run initial simulation matching default 35% slider position
+      simulateSubsidy(35).then(sim => {
+        if (isMounted) setSimulationResult(sim)
+      }).catch(console.warn)
+
       // If loaded from cached fallback (e.g. Render waking up), poll sequentially
       if (isFallback) {
         pollLiveBackend(0)
