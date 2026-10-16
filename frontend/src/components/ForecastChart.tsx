@@ -41,6 +41,15 @@ export default function ForecastChart({ data }: ForecastChartProps) {
     }
   })
 
+  const years = formattedData.map(d => d.year)
+  const minYear = years.length > 0 ? Math.min(...years) : 2017
+  const maxYear = years.length > 0 ? Math.max(...years) : 2030
+
+  // Continuous linear ticks to preserve accurate historical time intervals (2017 -> 2022 is 5 yrs, not 1 slot)
+  const tickYears = minYear <= 2017
+    ? [2017, 2020, 2022, 2024, 2026, 2028, 2030]
+    : [2024, 2025, 2026, 2027, 2028, 2029, 2030]
+
   return (
     <div className="glass-panel p-6 mt-8 flex flex-col relative overflow-hidden group hover:border-indigo-500/30 transition-colors h-[420px] shrink-0">
       <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -90,6 +99,9 @@ export default function ForecastChart({ data }: ForecastChartProps) {
             />
             <XAxis 
               dataKey="year" 
+              type="number"
+              domain={[minYear, maxYear]}
+              ticks={tickYears}
               stroke={isDark ? "rgba(255, 255, 255, 0.08)" : "#cbd5e1"}
               tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontWeight: 500, fontSize: 12 }} 
               tickMargin={10}
@@ -105,6 +117,7 @@ export default function ForecastChart({ data }: ForecastChartProps) {
               domain={[0, 100]}
             />
             <Tooltip 
+              labelFormatter={(label) => `Year ${label}`}
               contentStyle={{ 
                 backgroundColor: isDark ? '#111827' : '#ffffff',
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',

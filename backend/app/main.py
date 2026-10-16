@@ -224,7 +224,7 @@ def simulate_policy(req: SimulationRequest):
     annual_policy_momentum = 1.6 + (req.subsidy_percentage / 100.0) * 1.5 if req.subsidy_percentage > 0 else 1.6
     
     forecast = [
-        # Empirical Historical Microdata Points
+        # Empirical Historical Microdata Points (Pre-policy anchors)
         {
             "year": 2017,
             "business_as_usual": round(eicv5_2017_national_rate, 1),

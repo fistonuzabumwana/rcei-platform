@@ -289,24 +289,28 @@ export function generatePolicyBriefPDF({
   doc.text('2030 National Biomass Reliance Forecast Trajectory', margin, currentY)
   currentY += 3.5
 
-  const forecastData = simulationResult?.forecast && simulationResult.forecast.length > 0
+  const rawForecastData = simulationResult?.forecast && simulationResult.forecast.length > 0
     ? simulationResult.forecast
     : [
-        { year: 2024, business_as_usual: 80.5, with_policy: 72.0 },
-        { year: 2025, business_as_usual: 79.0, with_policy: 69.5 },
-        { year: 2026, business_as_usual: 77.5, with_policy: 67.0 },
-        { year: 2027, business_as_usual: 76.0, with_policy: 64.5 },
-        { year: 2028, business_as_usual: 74.5, with_policy: 62.0 },
-        { year: 2029, business_as_usual: 73.0, with_policy: 59.5 },
-        { year: 2030, business_as_usual: 71.5, with_policy: 57.0 },
+        { year: 2024, business_as_usual: 80.5, with_policy: 72.0, is_historical: false },
+        { year: 2025, business_as_usual: 79.0, with_policy: 69.5, is_historical: false },
+        { year: 2026, business_as_usual: 77.5, with_policy: 67.0, is_historical: false },
+        { year: 2027, business_as_usual: 76.0, with_policy: 64.5, is_historical: false },
+        { year: 2028, business_as_usual: 74.5, with_policy: 62.0, is_historical: false },
+        { year: 2029, business_as_usual: 73.0, with_policy: 59.5, is_historical: false },
+        { year: 2030, business_as_usual: 71.5, with_policy: 57.0, is_historical: false },
       ]
+
+  // Filter to policy simulation trajectory years (2024–2030) to avoid showing pre-policy historical anchors as policy gaps
+  const policyTrajectory = rawForecastData.filter(f => !f.is_historical && f.year >= 2024)
+  const forecastData = policyTrajectory.length > 0 ? policyTrajectory : rawForecastData
 
   const forecastTableBody = forecastData.map(f => [
     f.year.toString(),
     `${f.business_as_usual.toFixed(1)}%`,
     `${f.with_policy.toFixed(1)}%`,
     '< 50.0%',
-    f.with_policy < 50 ? 'Target Met' : `${(f.with_policy - 50).toFixed(1)}% gap`
+    f.with_policy <= 50 ? 'Target Met' : `${(f.with_policy - 50).toFixed(1)}% gap`
   ])
 
   autoTable(doc, {
