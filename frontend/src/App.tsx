@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchDistrictMetrics, simulateSubsidy } from './services/api'
-import type { DistrictMetric } from './services/api'
+import { fetchDistrictMetrics, fetchLiveDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
+import type { DistrictMetric, ModelInfo } from './services/api'
 import { 
   Activity, 
   Flame, 
@@ -14,7 +14,9 @@ import {
   ChevronDown, 
   ChevronUp, 
   PlayCircle, 
-  Loader2 
+  Loader2,
+  BookOpen,
+  Trophy
 } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
@@ -22,6 +24,7 @@ import SimulationResults from './components/SimulationResults'
 import DistrictLeaderboard from './components/DistrictLeaderboard'
 import DistrictMatrixTable from './components/DistrictMatrixTable'
 import ThemeToggle from './components/ThemeToggle'
+import MethodologyModal from './components/MethodologyModal'
 import { generatePolicyBriefPDF } from './services/pdfExport'
 import { exportDistrictsToCSV } from './services/csvExport'
 
@@ -29,7 +32,10 @@ function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [isFallbackData, setIsFallbackData] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [showMethodologyModal, setShowMethodologyModal] = useState(false)
+  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null)
   
   // Track simulation results to update map
   const [simulationResult, setSimulationResult] = useState<any>(null)
@@ -45,14 +51,63 @@ function App() {
   const [isSimulatingPreset, setIsSimulatingPreset] = useState(false)
 
   useEffect(() => {
-    fetchDistrictMetrics().then(data => {
+    let isMounted = true
+    let pollTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+    // Proactively warm up cloud backend to avoid cold start latency
+    warmupBackend()
+    fetchModelInfo().then(info => {
+      if (isMounted) setModelInfo(info)
+    }).catch(console.warn)
+
+    const pollLiveBackend = (attemptCount: number) => {
+      if (!isMounted) return
+      pollTimeoutId = setTimeout(async () => {
+        if (!isMounted) return
+        try {
+          const liveData = await fetchLiveDistrictMetrics()
+          if (!isMounted) return
+          setMetrics(liveData)
+          setIsFallbackData(false)
+          setError(false)
+          return
+        } catch {
+          if (!isMounted) return
+          if (attemptCount + 1 < 5) {
+            pollLiveBackend(attemptCount + 1)
+          } else {
+            // Retries exhausted, transition from warming to offline baseline active
+            setIsFallbackData(false)
+            setError(true)
+          }
+        }
+      }, 5000)
+    }
+
+    fetchDistrictMetrics().then(({ data, isFallback }) => {
+      if (!isMounted) return
       setMetrics(data)
+      setIsFallbackData(isFallback)
       setLoading(false)
+
+      // If loaded from cached fallback (e.g. Render waking up), poll sequentially
+      if (isFallback) {
+        pollLiveBackend(0)
+      }
     }).catch(err => {
+      if (!isMounted) return
       console.error(err)
       setError(true)
+      setIsFallbackData(false)
       setLoading(false)
     })
+
+    return () => {
+      isMounted = false
+      if (pollTimeoutId) {
+        clearTimeout(pollTimeoutId)
+      }
+    }
   }, [])
 
   // Calculate dynamic stats
@@ -134,10 +189,10 @@ function App() {
             </div>
             <p className="mt-2 text-[var(--text-secondary)] font-medium ml-12">NST2 Decision Platform & Socioeconomic Simulator</p>
           </div>
-          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 items-center">
+          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 items-center">
             <ThemeToggle />
-            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : ''}`}>
-              {loading ? (
+            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : isFallbackData ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
+              {loading || isFallbackData ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
@@ -152,10 +207,20 @@ function App() {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                 </span>
               )}
-              <span className={`text-xs font-bold tracking-wider uppercase ${error ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-primary)]'}`}>
-                {loading ? 'Connecting...' : error ? 'API Disconnected' : 'Live Data Connected'}
+              <span className={`text-xs font-bold tracking-wider uppercase ${
+                loading ? 'text-amber-500' : isFallbackData ? 'text-amber-600 dark:text-amber-400' : error ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-primary)]'
+              }`}>
+                {loading ? 'Connecting...' : isFallbackData ? 'Baseline (Warming Cloud...)' : error ? 'Offline Baseline Active' : 'Live Cloud Connected'}
               </span>
             </div>
+            <button 
+              onClick={() => setShowMethodologyModal(true)}
+              className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
+              title="Inspect dual NISR microdata fusion, model validation metrics (RMSE, R2), and behavioral calibration"
+            >
+              <BookOpen size={18} className="text-indigo-500" />
+              <span>Data & Methodology</span>
+            </button>
             <button 
               onClick={() => exportDistrictsToCSV(metrics, simulationResult)}
               className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
@@ -183,7 +248,7 @@ function App() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-indigo-200/80 dark:border-indigo-500/20 pb-4">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-600/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/40 font-black text-sm">
-                🏆
+                <Trophy size={16} />
               </span>
               <div>
                 <div className="flex items-center gap-2">
@@ -325,8 +390,22 @@ function App() {
 
       {!isMapFullscreen && (
         loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+            <div className="glass-panel p-8 h-40 rounded-2xl bg-[var(--elevated-surface)]/60 border border-[var(--card-border)] flex flex-col justify-between">
+              <div className="h-4 bg-slate-300 dark:bg-slate-700/60 rounded w-1/2"></div>
+              <div className="h-10 bg-slate-300 dark:bg-slate-700/60 rounded w-3/4"></div>
+              <div className="h-3 bg-slate-300 dark:bg-slate-700/60 rounded w-1/3"></div>
+            </div>
+            <div className="glass-panel p-8 h-40 rounded-2xl bg-[var(--elevated-surface)]/60 border border-[var(--card-border)] flex flex-col justify-between">
+              <div className="h-4 bg-slate-300 dark:bg-slate-700/60 rounded w-1/2"></div>
+              <div className="h-10 bg-slate-300 dark:bg-slate-700/60 rounded w-3/4"></div>
+              <div className="h-3 bg-slate-300 dark:bg-slate-700/60 rounded w-1/3"></div>
+            </div>
+            <div className="glass-panel p-8 h-40 rounded-2xl bg-[var(--elevated-surface)]/60 border border-[var(--card-border)] flex flex-col justify-between">
+              <div className="h-4 bg-slate-300 dark:bg-slate-700/60 rounded w-1/2"></div>
+              <div className="h-10 bg-slate-300 dark:bg-slate-700/60 rounded w-3/4"></div>
+              <div className="h-3 bg-slate-300 dark:bg-slate-700/60 rounded w-1/3"></div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -445,6 +524,13 @@ function App() {
           </>
         );
       })()}
+
+      {/* Statistical Methodology & Dual NISR Microdata Fusion Modal */}
+      <MethodologyModal
+        isOpen={showMethodologyModal}
+        onClose={() => setShowMethodologyModal(false)}
+        modelInfo={modelInfo}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save, HeartHandshake, ShieldAlert, Sparkles } from 'lucide-react'
+import { Save, HeartHandshake, ShieldAlert, Sparkles, Globe, Users, Sprout } from 'lucide-react'
 import type { SimulationResult } from '../services/api'
 import ForecastChart from './ForecastChart'
 
@@ -172,7 +172,8 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
           <div className="absolute -right-4 -top-4 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
           <div>
             <p className="text-xs font-bold text-[var(--tint-green-label)] mb-2 uppercase tracking-wide flex items-center gap-2">
-              🌍 Article 6 Sovereign Carbon Financing
+              <Globe size={15} className="text-emerald-500" />
+              <span>Article 6 Sovereign Carbon Financing</span>
             </p>
             <p className="text-4xl font-black text-[var(--tint-green-num)] relative z-10 mb-2">
               +{formatMoney(dynamicCarbonRevenueRwf)} <span className="text-xl font-bold opacity-80">Rwf</span>
@@ -236,7 +237,8 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
       {/* Human, Gender & Public Health Dividend Banner */}
       <div className="mt-6 p-5 rounded-2xl border border-[var(--card-border)] bg-[var(--elevated-surface)] shadow-sm">
         <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 mb-3 flex items-center gap-2">
-          <span>👩‍👧</span> Gender Inclusion & Public Health Dividend (NST2 GESI Alignment)
+          <Users size={16} className="text-indigo-600 dark:text-indigo-400" />
+          <span>Gender Inclusion & Public Health Dividend (NST2 GESI Alignment)</span>
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
@@ -258,6 +260,60 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
           </div>
         </div>
       </div>
+
+      {/* Track 1 (Agriculture) & Track 4 (Clean Energy) Circular Bioeconomy Nexus */}
+      {result.bioeconomy && (
+        <div className="mt-6 p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+              <Sprout size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Track 1 & Track 4 Nexus: Circular Agricultural Bioeconomy (SAS 2024 Microdata)</span>
+            </h4>
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 w-fit">
+              Livestock Bio-Slurry & Agronomic Residues
+            </span>
+          </div>
+
+          <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed">
+            By analyzing plot-level crop harvests and livestock microdata from the <strong>Agricultural Survey (SAS) 2024</strong>, 
+            the platform unlocks clean energy pathways that simultaneously boost soil fertility and eliminate green firewood consumption:
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
+              <span className="text-[var(--text-secondary)] block font-medium">Domestic Biodigester Capacity</span>
+              <span className="text-base font-black text-amber-500 mt-1 block">
+                {result.bioeconomy.national_biogas_viable_households.toLocaleString()} Smallholders
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">Owning &ge;2 zero-grazed cattle for 4-6m³ continuous biogas</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
+              <span className="text-[var(--text-secondary)] block font-medium">Organic Bio-Slurry Fertilizer</span>
+              <span className="text-base font-black text-emerald-500 mt-1 block">
+                {formatMoney(result.bioeconomy.national_bioslurry_fertilizer_tons_year)} Tons / Yr
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">High-nitrogen organic soil conditioner substituting imported fertilizers</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
+              <span className="text-[var(--text-secondary)] block font-medium">Agronomic Residue Feedstock</span>
+              <span className="text-base font-black text-indigo-500 mt-1 block">
+                {formatMoney(result.bioeconomy.national_crop_residue_feedstock_tons)} Tons / Yr
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">Harvest waste (maize, beans, rice, coffee) available for clean densification</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
+              <span className="text-[var(--text-secondary)] block font-medium">Sustainable Pellet Potential</span>
+              <span className="text-base font-black text-purple-500 mt-1 block">
+                {formatMoney(result.bioeconomy.national_pellet_potential_tons)} Tons / Yr
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">High-density agri-pellets completely displacing forest wood</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

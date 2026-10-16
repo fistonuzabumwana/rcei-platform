@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { DistrictMetric, SimulationResult } from '../services/api'
 import type { FeatureCollection } from 'geojson'
-import { Maximize, Minimize, X, Flame, Zap, TrendingDown, Award } from 'lucide-react'
+import { Maximize, Minimize, X, Flame, Zap, TrendingDown, Award, Sprout } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface MapViewProps {
@@ -272,7 +272,7 @@ export default function MapView({
               </div>
             )}
 
-            {/* Demographics */}
+            {/* Demographics & Multi-Dataset Historical Velocity */}
             <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
               <div className="p-2 rounded-lg bg-[var(--elevated-surface)] border border-[var(--card-border)]">
                 <span className="text-[var(--text-muted)] block">Poverty Rate:</span>
@@ -283,6 +283,42 @@ export default function MapView({
                 <span className="font-bold text-[var(--text-primary)] text-xs">{selectedData.estimated_households.toLocaleString()}</span>
               </div>
             </div>
+
+            {/* Longitudinal 2017 -> 2022 -> 2024 progression */}
+            {(selectedData.eicv5_2017_clean_rate !== undefined || selectedData.census_2022_clean_rate !== undefined || selectedData.census_2022_biomass_rate !== undefined) && (
+              <div className="p-2 rounded-lg bg-[var(--elevated-surface)] border border-[var(--card-border)] text-[10px]">
+                <span className="text-[var(--text-muted)] block font-semibold mb-0.5">10-Yr Clean Energy Progression:</span>
+                <div className="flex items-center justify-between font-bold text-[var(--text-primary)]">
+                  <span>'17: {selectedData.eicv5_2017_clean_rate !== undefined ? `${selectedData.eicv5_2017_clean_rate.toFixed(1)}%` : '--'}</span>
+                  <span>&rarr;</span>
+                  <span>'22: {selectedData.census_2022_clean_rate !== undefined
+                    ? `${selectedData.census_2022_clean_rate.toFixed(1)}%`
+                    : (selectedData.census_2022_biomass_rate !== undefined
+                        ? `${(100 - selectedData.census_2022_biomass_rate).toFixed(1)}%`
+                        : '--')}</span>
+                  <span>&rarr;</span>
+                  <span className="text-indigo-600 dark:text-indigo-400">'24: {selectedData.clean_energy_rate.toFixed(1)}%</span>
+                </div>
+              </div>
+            )}
+
+            {/* Prescribed Clean Pathway (Track 1 & Track 4 Bioenergy Nexus) */}
+            {selectedData.recommended_clean_pathway && (
+              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px]">
+                <span className="text-emerald-700 dark:text-emerald-300 font-extrabold uppercase flex items-center gap-1 tracking-wider">
+                  <Sprout size={12} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Recommended Bioenergy Pathway:</span>
+                </span>
+                <span className="font-bold text-[var(--text-primary)] block mt-0.5">
+                  {selectedData.recommended_clean_pathway}
+                </span>
+                {selectedData.biogas_viable_ag_hh_pct !== undefined && selectedData.biogas_viable_ag_hh_pct > 0 && (
+                  <span className="text-[9px] text-[var(--text-muted)] block mt-0.5">
+                    Biogas viable ag-HHs: {selectedData.biogas_viable_ag_hh_pct}% | Residue: {Math.round(selectedData.crop_residue_feedstock_tons || 0).toLocaleString()} t
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
