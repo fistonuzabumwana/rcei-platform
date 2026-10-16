@@ -51,6 +51,8 @@ Powered by a **behaviorally-calibrated Random Forest Regressor** (grounded in Wo
 | ⚙️ **Backend API & Swagger Docs** | [https://rcei-backend.onrender.com/docs](https://rcei-backend.onrender.com/docs) | Interactive OpenAPI / Swagger UI on Render |
 | 📦 **Public GitHub Repository** | [https://github.com/fistonuzabumwana/rcei-platform](https://github.com/fistonuzabumwana/rcei-platform) | Source code, ML pipeline, test suite, and datasets |
 | 📑 **EICV7 Methodology Report** | [`docs/EICV7_METHODOLOGY_REPORT.md`](docs/EICV7_METHODOLOGY_REPORT.md) | Econometric modeling, sample weighting & formulas |
+| 📚 **Data Dictionary & Schema** | [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) | Microdata variables, definitions & district metrics schema |
+| 🔌 **REST API Specification** | [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | Complete endpoints, request/response payloads & schemas |
 
 ---
 
