@@ -1,39 +1,48 @@
 import { useState } from 'react'
 import { simulateSubsidy } from '../services/api'
 import type { SimulationResult } from '../services/api'
-import { Calculator, ArrowRight, ShieldCheck, MapPin, Sparkles } from 'lucide-react'
+import { Calculator, ArrowRight, ShieldCheck, MapPin, Sparkles, Globe, AlertTriangle, Building2, Sprout } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 interface SimulatorProps {
   onSimulationComplete: (result: SimulationResult | null) => void
 }
 
+export interface TargetPreset {
+  id: string
+  label: string
+  icon: LucideIcon
+  districts: number[]
+  desc: string
+}
+
 // Predefined policy targeting clusters based on EICV7 microdata
-export const TARGET_PRESETS = {
+export const TARGET_PRESETS: Record<string, TargetPreset> = {
   all: {
     id: 'all',
     label: 'Nationwide (30 Districts)',
-    icon: '🌐',
+    icon: Globe,
     districts: [] as number[],
     desc: 'Universal national subsidy rollout across all 30 districts.'
   },
   top_poverty: {
     id: 'top_poverty',
     label: 'Top 10 Priority (High Poverty & Biomass)',
-    icon: '🚨',
+    icon: AlertTriangle,
     districts: [22, 23, 25, 45, 44, 26, 35, 32, 31, 21],
     desc: 'Targeted at highest poverty & biomass zones (Gisagara, Nyaruguru, Nyamagabe, Gicumbi, etc.).'
   },
   kigali: {
     id: 'kigali',
     label: 'Kigali Urban Transition',
-    icon: '🏙️',
+    icon: Building2,
     districts: [11, 12, 13],
     desc: 'Focus on Nyarugenge, Gasabo, and Kicukiro to accelerate urban charcoal ban.'
   },
   rural: {
     id: 'rural',
     label: 'Rural Provinces (27 Districts)',
-    icon: '🌾',
+    icon: Sprout,
     districts: [21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 41, 42, 43, 44, 45, 51, 52, 53, 54, 55, 56, 57],
     desc: 'Exclude Kigali to focus capital on provincial and rural transformation.'
   }
@@ -130,23 +139,24 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
           {(Object.keys(TARGET_PRESETS) as Array<keyof typeof TARGET_PRESETS>).map((key) => {
             const p = TARGET_PRESETS[key]
             const active = targetPreset === key
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTargetPreset(key)}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  active
-                    ? 'bg-indigo-500/10 border-indigo-500/50 text-[var(--text-primary)] shadow-sm'
-                    : 'bg-[var(--elevated-surface)] border-[var(--card-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs">
-                  <span>{p.icon}</span>
-                  <span className="truncate">{p.label.split('(')[0]}</span>
-                </div>
-              </button>
-            )
+                const Icon = p.icon
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTargetPreset(key)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      active
+                        ? 'bg-indigo-500/10 border-indigo-500/50 text-[var(--text-primary)] shadow-sm'
+                        : 'bg-[var(--elevated-surface)] border-[var(--card-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs">
+                      <Icon size={14} className={active ? 'text-indigo-600 dark:text-indigo-400 shrink-0' : 'text-[var(--text-muted)] shrink-0'} />
+                      <span className="truncate">{p.label.split('(')[0]}</span>
+                    </div>
+                  </button>
+                )
           })}
         </div>
         <p className="text-[11px] text-[var(--text-muted)] mt-1.5 italic">
