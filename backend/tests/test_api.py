@@ -44,10 +44,17 @@ def test_simulate_subsidy_active_national():
     assert data["avoided_charcoal_expenditure_rwf"] > 0
     assert data["targeted_districts_count"] == 30
     
-    # Check 2030 forecast trajectory
-    assert len(data["forecast"]) == 7 # 2024 to 2030
-    assert data["forecast"][0]["year"] == 2024
+    # Check 13-year longitudinal forecast trajectory (2017 historical anchor -> 2030 NST2 target)
+    assert len(data["forecast"]) == 9 # 2017, 2022, 2024 to 2030
+    assert data["forecast"][0]["year"] == 2017
+    assert data["forecast"][0]["is_historical"] is True
+    assert data["forecast"][1]["year"] == 2022
+    assert data["forecast"][1]["is_historical"] is True
+    assert data["forecast"][2]["year"] == 2024
     assert data["forecast"][-1]["year"] == 2030
+    assert "bioeconomy" in data
+    assert data["bioeconomy"]["national_biogas_viable_households"] > 0
+    assert data["bioeconomy"]["national_crop_residue_feedstock_tons"] > 0
 
 def test_simulate_targeted_districts():
     """Verify targeted policy cluster (Top 3 districts) isolates impact correctly."""
@@ -77,3 +84,33 @@ def test_carbon_factor_ratio():
     charcoal = data["total_annual_charcoal_saved_tons"]
     co2e = data["carbon_credits_earned_tons"]
     assert pytest.approx(co2e, rel=1e-2) == charcoal * 3.0
+
+def test_health_check_endpoint():
+    """Verify health endpoint responds with service status and model state."""
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["model_loaded"] is True
+    assert data["districts_count"] == 30
+    assert len(data["data_sources"]) >= 2
+
+def test_model_info_endpoint():
+    """Verify statistical validation metrics endpoint returns RMSE, R2, and citations."""
+    response = client.get("/api/v1/model/info")
+    assert response.status_code == 200
+    data = response.json()
+    assert "test_rmse" in data or "model_type" in data
+    assert "feature_importances" in data or "model_type" in data
+
+def test_forecast_confidence_intervals():
+    """Verify forecast includes 95% uncertainty confidence intervals."""
+    payload = {"subsidy_percentage": 40.0, "target_districts": []}
+    response = client.post("/api/v1/simulate/subsidy", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    for point in data["forecast"]:
+        assert "with_policy_lower" in point
+        assert "with_policy_upper" in point
+        assert point["with_policy_lower"] <= point["with_policy"] <= point["with_policy_upper"]
+
