@@ -11,3 +11,8 @@ dataset/
 *.ps1
 rewrite_main.py
 
+# Internal hackathon reviews & pitch notes
+HACKATHON_REVIEW*.md
+docs/PITCH_DECK.md
+
+
