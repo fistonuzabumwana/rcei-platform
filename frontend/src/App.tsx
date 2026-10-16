@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { fetchDistrictMetrics, fetchLiveDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
 import type { DistrictMetric, ModelInfo } from './services/api'
 import { 
@@ -50,6 +50,15 @@ function App() {
   const [showTourBanner, setShowTourBanner] = useState(true)
   const [isSimulatingPreset, setIsSimulatingPreset] = useState(false)
 
+  // Track simulation request sequencing to prevent slower auto-runs or preset calls from overwriting newer user runs
+  const latestSimulationId = useRef<number>(0)
+
+  // Handler for user simulation runs (increments sequence ID so any prior inflight run is discarded)
+  const handleUserSimulationComplete = (result: any) => {
+    latestSimulationId.current += 1
+    setSimulationResult(result)
+  }
+
   useEffect(() => {
     let isMounted = true
     let pollTimeoutId: ReturnType<typeof setTimeout> | null = null
@@ -89,6 +98,15 @@ function App() {
       setMetrics(data)
       setIsFallbackData(isFallback)
       setLoading(false)
+
+      // Auto-run initial baseline simulation matching default 35% slider position
+      // Guarded by request ID sequence: if user or preset already ran, this initial result is dropped
+      const initReqId = ++latestSimulationId.current
+      simulateSubsidy(35).then(sim => {
+        if (isMounted && latestSimulationId.current === initReqId) {
+          setSimulationResult(sim)
+        }
+      }).catch(console.warn)
 
       // If loaded from cached fallback (e.g. Render waking up), poll sequentially
       if (isFallback) {
@@ -158,15 +176,18 @@ function App() {
 
   const handleRunPresetScenario = async (subsidy: number = 40) => {
     setIsSimulatingPreset(true)
+    const presetReqId = ++latestSimulationId.current
     try {
       const res = await simulateSubsidy(subsidy)
-      setSimulationResult(res)
-      setTimeout(() => {
-        const resultsEl = document.getElementById('simulation-results-section')
-        if (resultsEl) {
-          resultsEl.scrollIntoView({ behavior: 'smooth' })
-        }
-      }, 150)
+      if (latestSimulationId.current === presetReqId) {
+        setSimulationResult(res)
+        setTimeout(() => {
+          const resultsEl = document.getElementById('simulation-results-section')
+          if (resultsEl) {
+            resultsEl.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 150)
+      }
     } catch (err) {
       console.error('Failed to run preset scenario:', err)
     } finally {
@@ -481,7 +502,7 @@ function App() {
               </div>
               {!isMapFullscreen && (
                 <div className="z-10 flex flex-col justify-stretch">
-                  <Simulator onSimulationComplete={setSimulationResult} />
+                  <Simulator onSimulationComplete={handleUserSimulationComplete} />
                 </div>
               )}
             </div>

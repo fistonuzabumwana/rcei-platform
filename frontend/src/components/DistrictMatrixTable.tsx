@@ -617,7 +617,6 @@ export default function DistrictMatrixTable({
               ) : (
                 filteredAndSortedRows.map(row => {
                   const isSelected = selectedDistrictId === row.id
-                  const hasSimulation = simulationResult !== null && simulationResult !== undefined
 
                   return (
                     <tr
@@ -684,7 +683,7 @@ export default function DistrictMatrixTable({
                                 <span className="text-[10px] text-[var(--text-muted)]">+{Math.round(row.convertedHouseholds).toLocaleString()} HH</span>
                               </div>
                             ) : (
-                              <span className="text-[var(--text-muted)]">{hasSimulation ? '0 t' : '--'}</span>
+                              <span className="text-[var(--text-muted)] font-medium">0 t</span>
                             )}
                           </td>
                         </>
