@@ -28,12 +28,18 @@ export default function ForecastChart({ data }: ForecastChartProps) {
 
   if (!data || data.length === 0) return null
 
-  // Ensure confidence band keys exist
-  const formattedData = data.map(item => ({
-    ...item,
-    with_policy_lower: item.with_policy_lower ?? Math.max(0, item.with_policy - 1.2),
-    with_policy_upper: item.with_policy_upper ?? Math.min(100, item.with_policy + 1.2),
-  }))
+  // Check if empirical confidence interval bounds are supplied by API
+  const hasEmpiricalCi = data.some(
+    item => typeof item.with_policy_lower === 'number' && typeof item.with_policy_upper === 'number'
+  )
+
+  const formattedData = data.map(item => {
+    const hasBounds = typeof item.with_policy_lower === 'number' && typeof item.with_policy_upper === 'number'
+    return {
+      ...item,
+      ci_range: hasBounds ? [item.with_policy_lower, item.with_policy_upper] : undefined
+    }
+  })
 
   return (
     <div className="glass-panel p-6 mt-8 flex flex-col relative overflow-hidden group hover:border-indigo-500/30 transition-colors h-[420px] shrink-0">
@@ -46,17 +52,19 @@ export default function ForecastChart({ data }: ForecastChartProps) {
             2030 Time-Series Forecast & Uncertainty Bands
           </h3>
           <p className="text-xs md:text-sm font-medium text-[var(--text-secondary)]">
-            Projected National Biomass Reliance (%) with 95% Econometric Confidence Intervals
+            Projected National Biomass Reliance (%) {hasEmpiricalCi ? 'with 95% Econometric Confidence Intervals' : 'Simulation Trajectory'}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-full text-[11px] font-bold border border-indigo-500/20 shadow-sm">
             EICV5 &rarr; Census &rarr; EICV7 Base
           </span>
-          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-500/20 shadow-sm">
-            <ShieldCheck size={12} />
-            95% CI Range
-          </span>
+          {hasEmpiricalCi && (
+            <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-500/20 shadow-sm">
+              <ShieldCheck size={12} />
+              95% CI Range
+            </span>
+          )}
           <div className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/20 shadow-sm">
             NST2 Target: &lt;50%
           </div>
@@ -113,7 +121,10 @@ export default function ForecastChart({ data }: ForecastChartProps) {
                 if (name === 'With Policy Subsidy') {
                   const lower = item.payload.with_policy_lower
                   const upper = item.payload.with_policy_upper
-                  return [`${value}% (95% CI: ${lower}% – ${upper}%)`, name]
+                  if (typeof lower === 'number' && typeof upper === 'number') {
+                    return [`${value}% (95% CI: ${lower}% – ${upper}%)`, name]
+                  }
+                  return [`${value}%`, name]
                 }
                 return [`${value}%`, name]
               }}
@@ -144,16 +155,18 @@ export default function ForecastChart({ data }: ForecastChartProps) {
               label={{ position: 'top', value: 'EICV7 Base (2024)', fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }}
             />
             
-            {/* 95% Confidence Interval Area Band */}
-            <Area
-              name="95% CI Uncertainty Band"
-              type="monotone"
-              dataKey="with_policy_upper"
-              stroke="#818cf8"
-              strokeDasharray="2 2"
-              strokeWidth={1}
-              fill="url(#confidenceBand)"
-            />
+            {/* 95% Confidence Interval Area Band (fills between with_policy_lower and with_policy_upper) */}
+            {hasEmpiricalCi && (
+              <Area
+                name="95% CI Uncertainty Band"
+                type="monotone"
+                dataKey="ci_range"
+                stroke="#818cf8"
+                strokeDasharray="2 2"
+                strokeWidth={1}
+                fill="url(#confidenceBand)"
+              />
+            )}
 
             {/* Business as Usual (slate gray dashed) */}
             <Line 

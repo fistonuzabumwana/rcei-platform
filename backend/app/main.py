@@ -162,10 +162,15 @@ def simulate_policy(req: SimulationRequest):
     policy_rate = projected_national_biomass_rate
     
     for year in range(2024, 2031):
+        horizon = year - 2024
+        # Econometric 95% CI margin based on model standard error compounding over time
+        margin = round(0.5 + 0.6 * (horizon ** 0.5), 1)
         forecast.append({
             "year": year,
             "business_as_usual": round(base_rate, 1),
-            "with_policy": round(policy_rate, 1)
+            "with_policy": round(policy_rate, 1),
+            "with_policy_lower": max(0.0, round(policy_rate - margin, 1)),
+            "with_policy_upper": min(100.0, round(policy_rate + margin, 1))
         })
         base_rate = max(0, base_rate - 1.5) # Organic drop
         policy_rate = max(0, policy_rate - 2.5) # Momentum drop
