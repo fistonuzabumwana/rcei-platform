@@ -173,45 +173,65 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                 Random Forest Empirical Feature Importance Breakdown:
               </span>
               <div className="space-y-2 text-xs">
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span>LPG Kit Effective Equipment Price (<code className="text-[11px]">lpg_kit_price</code>)</span>
-                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">81.2%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="bg-indigo-600 h-full rounded-full" style={{ width: '81.2%' }}></div>
-                  </div>
-                </div>
+                {(() => {
+                  const featureConfig: Record<string, { label: string; barColor: string; textColor: string }> = {
+                    lpg_kit_price: {
+                      label: 'LPG Kit Effective Equipment Price',
+                      barColor: 'bg-indigo-600',
+                      textColor: 'text-indigo-600 dark:text-indigo-400'
+                    },
+                    is_urban: {
+                      label: 'Urban Infrastructure & Density',
+                      barColor: 'bg-indigo-500',
+                      textColor: 'text-indigo-600 dark:text-indigo-400'
+                    },
+                    is_poor: {
+                      label: 'Moderate Poverty Headcount',
+                      barColor: 'bg-amber-500',
+                      textColor: 'text-amber-600 dark:text-amber-400'
+                    },
+                    is_extreme_poor: {
+                      label: 'Extreme Poverty Headcount',
+                      barColor: 'bg-rose-500',
+                      textColor: 'text-rose-600 dark:text-rose-400'
+                    }
+                  }
 
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span>Urban Infrastructure & Density (<code className="text-[11px]">is_urban</code>)</span>
-                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">12.7%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="bg-indigo-500 h-full rounded-full" style={{ width: '12.7%' }}></div>
-                  </div>
-                </div>
+                  const entries = modelInfo?.feature_importances
+                    ? Object.entries(modelInfo.feature_importances)
+                        .map(([key, val]) => ({
+                          key,
+                          value: typeof val === 'number' ? val : 0,
+                          pct: (val * 100).toFixed(1)
+                        }))
+                        .sort((a, b) => b.value - a.value)
+                    : [
+                        { key: 'lpg_kit_price', value: 0.812, pct: '81.2' },
+                        { key: 'is_urban', value: 0.127, pct: '12.7' },
+                        { key: 'is_poor', value: 0.034, pct: '3.4' },
+                        { key: 'is_extreme_poor', value: 0.028, pct: '2.8' },
+                      ]
 
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span>Moderate Poverty Headcount (<code className="text-[11px]">is_poor</code>)</span>
-                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">3.4%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full rounded-full" style={{ width: '3.4%' }}></div>
-                  </div>
-                </div>
+                  return entries.map(item => {
+                    const cfg = featureConfig[item.key] || {
+                      label: item.key.replace(/_/g, ' '),
+                      barColor: 'bg-indigo-500',
+                      textColor: 'text-indigo-600 dark:text-indigo-400'
+                    }
 
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span>Extreme Poverty Headcount (<code className="text-[11px]">is_extreme_poor</code>)</span>
-                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">2.8%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="bg-rose-500 h-full rounded-full" style={{ width: '2.8%' }}></div>
-                  </div>
-                </div>
+                    return (
+                      <div key={item.key}>
+                        <div className="flex justify-between font-semibold mb-1">
+                          <span>{cfg.label} (<code className="text-[11px]">{item.key}</code>)</span>
+                          <span className={`${cfg.textColor} font-bold`}>{item.pct}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className={`${cfg.barColor} h-full rounded-full`} style={{ width: `${item.pct}%` }}></div>
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             </div>
           </div>
