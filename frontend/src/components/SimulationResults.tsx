@@ -242,9 +242,9 @@ export default function SimulationResults({ result }: SimulationResultsProps) {
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
-            <span className="text-[var(--text-secondary)] block font-medium">Unpaid Fuel Foraging Time Saved</span>
-            <span className="text-base font-black text-emerald-500 mt-1 block">~14 Hours / Week</span>
-            <span className="text-[11px] text-[var(--text-muted)]">Freed per rural woman for education or paid economic activity</span>
+            <span className="text-[var(--text-secondary)] block font-medium">Domestic Fuel Gathering Freed</span>
+            <span className="text-base font-black text-emerald-500 mt-1 block">6.1 Hours / Week</span>
+            <span className="text-[11px] text-[var(--text-muted)]">Empirical EICV7 (s6cq4) per foraging household (9.9 hrs/wk with water fetching)</span>
           </div>
           <div className="p-3.5 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]">
             <span className="text-[var(--text-secondary)] block font-medium">Household PM2.5 Smoke Reduction</span>

@@ -110,6 +110,7 @@ def simulate_policy(req: SimulationRequest):
     
     total_converted_households = 0
     annual_charcoal_saved_tons = 0
+    avoided_charcoal_expenditure_total_rwf = 0.0
     results = {}
     
     # Assuming average clean cooking kit (gas cylinder + burner stove + regulator) costs 50,000 RWF
@@ -162,24 +163,42 @@ def simulate_policy(req: SimulationRequest):
             current_biomass_hh = data["estimated_households"] * (data["biomass_reliance_rate"] / 100.0)
             potential_conversions = current_biomass_hh * shift_rate
             
+            # Empirical fuel mix weighting from EICV7 microdata:
+            # Proportion of biomass-relying households specifically using charcoal vs firewood
+            dist_biomass_pct = max(0.1, data.get("biomass_reliance_rate", 90.0))
+            dist_charcoal_pct = data.get("charcoal_reliance_rate", 15.0)
+            charcoal_fraction = min(1.0, max(0.02, dist_charcoal_pct / dist_biomass_pct))
+            
             # Avg Rwanda household uses ~1.2 tons of biomass equivalent/year (NISR / REG energy statistics)
-            charcoal_saved = potential_conversions * 1.2 
+            # Weighted specifically by district empirical charcoal reliance
+            charcoal_saved = potential_conversions * (1.2 * charcoal_fraction)
+            
+            # Empirical annual fuel expenditure saved per converted household (EICV7 Section 8A3 microdata)
+            district_charcoal_exp_rwf = data.get("annual_charcoal_expenditure_rwf", 135000.0)
+            district_expenditure_saved = potential_conversions * district_charcoal_exp_rwf * charcoal_fraction
             
             total_converted_households += potential_conversions
             annual_charcoal_saved_tons += charcoal_saved
+            avoided_charcoal_expenditure_total_rwf += district_expenditure_saved
             
             results[dist_id] = {
                 "projected_biomass_rate": max(0.0, data["biomass_reliance_rate"] - (shift_rate * 100)),
                 "projected_clean_rate": min(100.0, data["clean_energy_rate"] + (shift_rate * 100)),
                 "converted_households": int(potential_conversions),
-                "charcoal_saved_tons": round(charcoal_saved, 1)
+                "charcoal_saved_tons": round(charcoal_saved, 1),
+                "charcoal_reliance_rate": data.get("charcoal_reliance_rate", 0.0),
+                "firewood_reliance_rate": data.get("firewood_reliance_rate", 0.0),
+                "wood_collection_hours_week": data.get("wood_collection_hours_week", 6.1)
             }
         else:
             results[dist_id] = {
                 "projected_biomass_rate": data["biomass_reliance_rate"],
                 "projected_clean_rate": data["clean_energy_rate"],
                 "converted_households": 0,
-                "charcoal_saved_tons": 0.0
+                "charcoal_saved_tons": 0.0,
+                "charcoal_reliance_rate": data.get("charcoal_reliance_rate", 0.0),
+                "firewood_reliance_rate": data.get("firewood_reliance_rate", 0.0),
+                "wood_collection_hours_week": data.get("wood_collection_hours_week", 6.1)
             }
             
     total_budget_rwf = total_converted_households * subsidy_amount_per_hh
@@ -193,9 +212,8 @@ def simulate_policy(req: SimulationRequest):
     # Net fiscal cost (can be negative = sovereign profit)
     net_policy_cost_rwf = total_budget_rwf - carbon_credit_revenue_rwf
     
-    # Citizen Economic Impact: Avoided Charcoal Purchases
-    # Average urban market price: 900 RWF per kg -> 900,000 RWF per ton
-    avoided_charcoal_expenditure_rwf = annual_charcoal_saved_tons * 900000
+    # Citizen Economic Impact: Avoided Charcoal Purchases based on empirical EICV7 expenditure microdata
+    avoided_charcoal_expenditure_rwf = avoided_charcoal_expenditure_total_rwf
     avg_savings_per_hh_rwf = round(avoided_charcoal_expenditure_rwf / total_converted_households, 0) if total_converted_households > 0 else 0
 
     # 2030 Time-Series Forecasting with Longitudinal Ground Truth (2017 -> 2022 -> 2024 -> 2030)
