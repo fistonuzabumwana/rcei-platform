@@ -108,6 +108,11 @@ export const fetchDistrictMetrics = async (): Promise<{ data: Record<string, Dis
   }
 };
 
+export const fetchLiveDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 6000 });
+  return response.data;
+};
+
 export const fetchModelInfo = async (): Promise<ModelInfo> => {
   try {
     const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 6000 });

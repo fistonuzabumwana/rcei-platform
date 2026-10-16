@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
+import { fetchDistrictMetrics, fetchLiveDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
 import type { DistrictMetric, ModelInfo } from './services/api'
 import { 
   Activity, 
@@ -51,36 +51,63 @@ function App() {
   const [isSimulatingPreset, setIsSimulatingPreset] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+    let pollTimeoutId: ReturnType<typeof setTimeout> | null = null
+
     // Proactively warm up cloud backend to avoid cold start latency
     warmupBackend()
-    fetchModelInfo().then(setModelInfo).catch(console.warn)
+    fetchModelInfo().then(info => {
+      if (isMounted) setModelInfo(info)
+    }).catch(console.warn)
+
+    const pollLiveBackend = (attemptCount: number) => {
+      if (!isMounted) return
+      pollTimeoutId = setTimeout(async () => {
+        if (!isMounted) return
+        try {
+          const liveData = await fetchLiveDistrictMetrics()
+          if (!isMounted) return
+          setMetrics(liveData)
+          setIsFallbackData(false)
+          setError(false)
+          return
+        } catch {
+          if (!isMounted) return
+          if (attemptCount + 1 < 5) {
+            pollLiveBackend(attemptCount + 1)
+          } else {
+            // Retries exhausted, transition from warming to offline baseline active
+            setIsFallbackData(false)
+            setError(true)
+          }
+        }
+      }, 5000)
+    }
 
     fetchDistrictMetrics().then(({ data, isFallback }) => {
+      if (!isMounted) return
       setMetrics(data)
       setIsFallbackData(isFallback)
       setLoading(false)
 
-      // If loaded from cached fallback (e.g. Render waking up), poll to switch to live seamlessly
+      // If loaded from cached fallback (e.g. Render waking up), poll sequentially
       if (isFallback) {
-        let attempts = 0
-        const interval = setInterval(() => {
-          attempts++
-          fetchDistrictMetrics().then(({ data: liveData, isFallback: stillFallback }) => {
-            if (!stillFallback) {
-              setMetrics(liveData)
-              setIsFallbackData(false)
-              clearInterval(interval)
-            } else if (attempts >= 5) {
-              clearInterval(interval)
-            }
-          }).catch(() => {})
-        }, 5000)
+        pollLiveBackend(0)
       }
     }).catch(err => {
+      if (!isMounted) return
       console.error(err)
       setError(true)
+      setIsFallbackData(false)
       setLoading(false)
     })
+
+    return () => {
+      isMounted = false
+      if (pollTimeoutId) {
+        clearTimeout(pollTimeoutId)
+      }
+    }
   }, [])
 
   // Calculate dynamic stats
