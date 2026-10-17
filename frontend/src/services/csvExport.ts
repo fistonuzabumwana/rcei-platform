@@ -46,7 +46,9 @@ export function exportDistrictsToCSV(
     const projClean = sim ? sim.projected_clean_rate.toFixed(2) : m.clean_energy_rate.toFixed(2)
     const converted = sim ? Math.round(sim.converted_households) : 0
     const charcoalSaved = sim ? sim.charcoal_saved_tons.toFixed(1) : '0.0'
-    const expenditureSaved = sim ? Math.round(sim.charcoal_saved_tons * 900000) : 0
+    const charExp = m.annual_charcoal_expenditure_rwf ?? 135000.0
+    const charFrac = m.charcoal_reliance_rate && m.biomass_reliance_rate ? (m.charcoal_reliance_rate / m.biomass_reliance_rate) : 0.2
+    const expenditureSaved = sim ? Math.round(converted * charExp * charFrac) : 0
 
     return [
       id,
