@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchDistrictMetrics, fetchLiveDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
+import { fetchDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
 import type { DistrictMetric, ModelInfo } from './services/api'
 import { 
   Activity, 
@@ -25,6 +25,7 @@ import DistrictLeaderboard from './components/DistrictLeaderboard'
 import DistrictMatrixTable from './components/DistrictMatrixTable'
 import ThemeToggle from './components/ThemeToggle'
 import MethodologyModal from './components/MethodologyModal'
+import ServerBootingModal from './components/ServerBootingModal'
 import { generatePolicyBriefPDF } from './services/pdfExport'
 import { exportDistrictsToCSV } from './services/csvExport'
 
@@ -32,7 +33,6 @@ function App() {
   const [metrics, setMetrics] = useState<Record<string, DistrictMetric> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [isFallbackData, setIsFallbackData] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [showMethodologyModal, setShowMethodologyModal] = useState(false)
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null)
@@ -50,6 +50,10 @@ function App() {
   const [showTourBanner, setShowTourBanner] = useState(true)
   const [isSimulatingPreset, setIsSimulatingPreset] = useState(false)
 
+  // Cloud server cold-start booting state
+  const [isServerBooting, setIsServerBooting] = useState(false)
+  const [bootAttemptCount, setBootAttemptCount] = useState(1)
+
   // Track simulation request sequencing to prevent slower auto-runs or preset calls from overwriting newer user runs
   const latestSimulationId = useRef<number>(0)
 
@@ -59,74 +63,38 @@ function App() {
     setSimulationResult(result)
   }
 
-  useEffect(() => {
-    let isMounted = true
-    let pollTimeoutId: ReturnType<typeof setTimeout> | null = null
-
-    // Proactively warm up cloud backend to avoid cold start latency
-    warmupBackend()
-    fetchModelInfo().then(info => {
-      if (isMounted) setModelInfo(info)
-    }).catch(console.warn)
-
-    const pollLiveBackend = (attemptCount: number) => {
-      if (!isMounted) return
-      pollTimeoutId = setTimeout(async () => {
-        if (!isMounted) return
-        try {
-          const liveData = await fetchLiveDistrictMetrics()
-          if (!isMounted) return
-          setMetrics(liveData)
-          setIsFallbackData(false)
-          setError(false)
-          return
-        } catch {
-          if (!isMounted) return
-          if (attemptCount + 1 < 5) {
-            pollLiveBackend(attemptCount + 1)
-          } else {
-            // Retries exhausted, transition from warming to offline baseline active
-            setIsFallbackData(false)
-            setError(true)
-          }
-        }
-      }, 5000)
-    }
-
-    fetchDistrictMetrics().then(({ data, isFallback }) => {
-      if (!isMounted) return
+  const loadDataFromBackend = async (attempt = 1) => {
+    setBootAttemptCount(attempt)
+    try {
+      const data = await fetchDistrictMetrics()
       setMetrics(data)
-      setIsFallbackData(isFallback)
       setLoading(false)
+      setIsServerBooting(false)
+      setError(false)
+
+      fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
 
       // Auto-run initial baseline simulation matching default 35% slider position
-      // Guarded by request ID sequence: if user or preset already ran, this initial result is dropped
       const initReqId = ++latestSimulationId.current
       simulateSubsidy(35).then(sim => {
-        if (isMounted && latestSimulationId.current === initReqId) {
+        if (latestSimulationId.current === initReqId) {
           setSimulationResult(sim)
         }
       }).catch(console.warn)
-
-      // If loaded from cached fallback (e.g. Render waking up), poll sequentially
-      if (isFallback) {
-        pollLiveBackend(0)
-      }
-    }).catch(err => {
-      if (!isMounted) return
-      console.error(err)
-      setError(true)
-      setIsFallbackData(false)
-      setLoading(false)
-    })
-
-    return () => {
-      isMounted = false
-      if (pollTimeoutId) {
-        clearTimeout(pollTimeoutId)
-      }
+    } catch {
+      // Backend is cold-starting / spinning up on free cloud tier
+      setIsServerBooting(true)
+      setTimeout(() => {
+        loadDataFromBackend(attempt + 1)
+      }, 4000)
     }
+  }
+
+  useEffect(() => {
+    warmupBackend()
+    loadDataFromBackend(1)
   }, [])
+
 
   // Calculate dynamic stats
   let avgBiomass = 0;
@@ -212,8 +180,8 @@ function App() {
           </div>
           <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 items-center">
             <ThemeToggle />
-            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : isFallbackData ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
-              {loading || isFallbackData ? (
+            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : isServerBooting ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
+              {loading || isServerBooting ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
@@ -229,9 +197,9 @@ function App() {
                 </span>
               )}
               <span className={`text-xs font-bold tracking-wider uppercase ${
-                loading ? 'text-amber-500' : isFallbackData ? 'text-amber-600 dark:text-amber-400' : error ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-primary)]'
+                isServerBooting ? 'text-amber-600 dark:text-amber-400' : loading ? 'text-amber-500' : error ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
               }`}>
-                {loading ? 'Connecting...' : isFallbackData ? 'Baseline (Warming Cloud...)' : error ? 'Offline Baseline Active' : 'Live Cloud Connected'}
+                {isServerBooting ? `Booting Server (Attempt #${bootAttemptCount})...` : loading ? 'Connecting...' : error ? 'Connection Error' : 'Live Cloud Connected'}
               </span>
             </div>
             <button 
@@ -551,6 +519,13 @@ function App() {
         isOpen={showMethodologyModal}
         onClose={() => setShowMethodologyModal(false)}
         modelInfo={modelInfo}
+      />
+
+      {/* Cloud Server Cold-Start Booting Notice */}
+      <ServerBootingModal
+        isOpen={isServerBooting}
+        attemptCount={bootAttemptCount}
+        onRetry={() => loadDataFromBackend(bootAttemptCount + 1)}
       />
     </div>
   )

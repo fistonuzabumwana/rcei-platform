@@ -1,6 +1,4 @@
 import axios from 'axios';
-import fallbackDistricts from '../data/fallbackDistricts.json';
-import fallbackModelInfo from '../data/fallbackModelInfo.json';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rcei-backend.onrender.com/api/v1';
 
@@ -103,29 +101,19 @@ export const warmupBackend = async (): Promise<boolean> => {
   }
 };
 
-export const fetchDistrictMetrics = async (): Promise<{ data: Record<string, DistrictMetric>; isFallback: boolean }> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 6000 });
-    return { data: response.data, isFallback: false };
-  } catch (err) {
-    console.warn('API cold-starting or unavailable, loading verified local microdata baseline:', err);
-    return { data: fallbackDistricts as Record<string, DistrictMetric>, isFallback: true };
-  }
+export const fetchDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
+  return response.data;
 };
 
 export const fetchLiveDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
-  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 6000 });
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
   return response.data;
 };
 
 export const fetchModelInfo = async (): Promise<ModelInfo> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 6000 });
-    return response.data;
-  } catch (err) {
-    console.warn('Using cached model calibration metrics:', err);
-    return fallbackModelInfo as ModelInfo;
-  }
+  const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 12000 });
+  return response.data;
 };
 
 export const simulateSubsidy = async (subsidy: number, targets: number[] = []): Promise<SimulationResult> => {
