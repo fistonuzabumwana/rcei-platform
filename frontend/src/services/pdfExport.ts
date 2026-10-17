@@ -215,7 +215,7 @@ export function generatePolicyBriefPDF({
   const kpisRow1 = [
     { label: 'Households Converted', value: convertedHH, sub: 'Clean cooking adoption', color: rwandaGreen },
     { label: 'Charcoal Displaced / Yr', value: charcoalSaved, sub: 'Deforestation reduced', color: rwandaGold },
-    { label: 'Citizen Total Savings', value: citizenSavings, sub: 'Retail avoided cost (~900 Rwf/kg)', color: roseAccent },
+    { label: 'Citizen Total Savings', value: citizenSavings, sub: 'Empirical EICV7 S8A3 spending', color: roseAccent },
   ]
 
   const kpisRow2 = [

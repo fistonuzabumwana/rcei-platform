@@ -12,6 +12,11 @@ export interface DistrictMetric {
   estimated_households: number;
   transition_priority_score: number;
   
+  charcoal_reliance_rate?: number;
+  firewood_reliance_rate?: number;
+  wood_collection_hours_week?: number;
+  annual_charcoal_expenditure_rwf?: number;
+
   // Longitudinal historical microdata
   census_2022_biomass_rate?: number;
   census_2022_clean_rate?: number;
