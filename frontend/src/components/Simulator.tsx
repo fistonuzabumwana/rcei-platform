@@ -49,7 +49,7 @@ export const TARGET_PRESETS: Record<string, TargetPreset> = {
 }
 
 export default function Simulator({ onSimulationComplete }: SimulatorProps) {
-  const [subsidy, setSubsidy] = useState<number>(35)
+  const [subsidy, setSubsidy] = useState<number>(0)
   const [targetPreset, setTargetPreset] = useState<keyof typeof TARGET_PRESETS>('all')
   const [loading, setLoading] = useState(false)
 
