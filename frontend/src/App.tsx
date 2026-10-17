@@ -71,16 +71,7 @@ function App() {
       setLoading(false)
       setIsServerBooting(false)
       setError(false)
-
       fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
-
-      // Auto-run initial baseline simulation matching default 35% slider position
-      const initReqId = ++latestSimulationId.current
-      simulateSubsidy(35).then(sim => {
-        if (latestSimulationId.current === initReqId) {
-          setSimulationResult(sim)
-        }
-      }).catch(console.warn)
     } catch {
       // Backend is cold-starting / spinning up on free cloud tier
       setIsServerBooting(true)
