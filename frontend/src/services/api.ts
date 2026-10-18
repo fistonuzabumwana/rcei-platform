@@ -106,17 +106,17 @@ export const warmupBackend = async (): Promise<boolean> => {
 };
 
 export const fetchDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
-  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 5000 });
   return response.data;
 };
 
 export const fetchLiveDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
-  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 5000 });
   return response.data;
 };
 
 export const fetchModelInfo = async (): Promise<ModelInfo> => {
-  const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 5000 });
   return response.data;
 };
 

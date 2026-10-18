@@ -65,19 +65,26 @@ function App() {
 
   const loadDataFromBackend = async (attempt = 1) => {
     setBootAttemptCount(attempt)
+    
+    // If backend hasn't responded after 1.5s, pop up booting modal proactively
+    const coldStartTimer = setTimeout(() => {
+      setIsServerBooting(true)
+    }, 1500)
+
     try {
       const data = await fetchDistrictMetrics()
+      clearTimeout(coldStartTimer)
       setMetrics(data)
       setLoading(false)
       setIsServerBooting(false)
       setError(false)
       fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
     } catch {
-      // Backend is cold-starting / spinning up on free cloud tier
+      clearTimeout(coldStartTimer)
       setIsServerBooting(true)
       setTimeout(() => {
         loadDataFromBackend(attempt + 1)
-      }, 4000)
+      }, 3500)
     }
   }
 
