@@ -94,7 +94,7 @@ export interface SimulationResult {
   }>;
 }
 
-// Check backend health status:
+// Check backend health status:::
 // Returns 'live' if /health responds 200 OK immediately
 // Returns 'cold_starting' if connection refused, network error, or 502/503/504 gateway response
 export const checkBackendHealth = async (): Promise<'live' | 'cold_starting' | 'error'> => {
