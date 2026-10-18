@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://rcei-backend.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://rcei-backend.onrender.com/health"
+    }
+  ]
+}
