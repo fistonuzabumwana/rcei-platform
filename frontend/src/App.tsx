@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchDistrictMetrics, simulateSubsidy, warmupBackend, fetchModelInfo } from './services/api'
+import { fetchDistrictMetrics, simulateSubsidy, checkBackendHealth, fetchModelInfo } from './services/api'
 import type { DistrictMetric, ModelInfo } from './services/api'
 import { 
   Activity, 
@@ -65,6 +65,17 @@ function App() {
 
   const loadDataFromBackend = async (attempt = 1) => {
     setBootAttemptCount(attempt)
+    
+    // Check if backend is waking up or already live
+    const health = await checkBackendHealth()
+    if (health === 'cold_starting') {
+      setIsServerBooting(true)
+      setTimeout(() => {
+        loadDataFromBackend(attempt + 1)
+      }, 3500)
+      return
+    }
+
     try {
       const data = await fetchDistrictMetrics()
       setMetrics(data)
@@ -73,16 +84,14 @@ function App() {
       setError(false)
       fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
     } catch {
-      // Backend is cold-starting / spinning up on free cloud tier
       setIsServerBooting(true)
       setTimeout(() => {
         loadDataFromBackend(attempt + 1)
-      }, 4000)
+      }, 3500)
     }
   }
 
   useEffect(() => {
-    warmupBackend()
     loadDataFromBackend(1)
   }, [])
 

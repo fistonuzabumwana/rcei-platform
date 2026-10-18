@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rcei-backend.onrender.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
+  console.warn('VITE_API_URL environment variable is not defined; using default /api/v1 path.');
+}
 
 export interface DistrictMetric {
   biomass_reliance_rate: number;
@@ -90,29 +94,46 @@ export interface SimulationResult {
   }>;
 }
 
-// Warmup ping to awaken Render cold start
-export const warmupBackend = async (): Promise<boolean> => {
+// Check backend health status:::
+// Returns 'live' if /health responds 200 OK immediately
+// Returns 'cold_starting' if connection refused, network error, or 502/503/504 gateway response
+export const checkBackendHealth = async (): Promise<'live' | 'cold_starting' | 'error'> => {
   try {
     const healthUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '') + '/health';
-    await axios.get(healthUrl, { timeout: 4000 });
-    return true;
-  } catch {
-    return false;
+    const res = await axios.get(healthUrl, { timeout: 3500 });
+    if (res.status === 200 && res.data?.status === 'healthy') {
+      return 'live';
+    }
+    return 'cold_starting';
+  } catch (err: any) {
+    // 502 Bad Gateway / 503 Service Unavailable / Connection Refused / Network Error = Cold Start
+    if (
+      err.response?.status === 502 ||
+      err.response?.status === 503 ||
+      err.response?.status === 504 ||
+      err.code === 'ERR_NETWORK' ||
+      err.code === 'ECONNREFUSED' ||
+      err.message?.includes('Network Error') ||
+      err.message?.includes('timeout')
+    ) {
+      return 'cold_starting';
+    }
+    return 'error';
   }
 };
 
 export const fetchDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
-  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 15000 });
   return response.data;
 };
 
 export const fetchLiveDistrictMetrics = async (): Promise<Record<string, DistrictMetric>> => {
-  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/metrics/districts`, { timeout: 15000 });
   return response.data;
 };
 
 export const fetchModelInfo = async (): Promise<ModelInfo> => {
-  const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 12000 });
+  const response = await axios.get(`${API_BASE_URL}/model/info`, { timeout: 15000 });
   return response.data;
 };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Server, Sparkles, RefreshCw, Cpu, Activity, ShieldCheck } from 'lucide-react'
+import { Server, Sparkles, RefreshCw, Cpu, Activity } from 'lucide-react'
 
 interface ServerBootingModalProps {
   isOpen: boolean
@@ -94,14 +94,6 @@ export default function ServerBootingModal({ isOpen, attemptCount, onRetry }: Se
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
-        </div>
-
-        {/* Real Data Guarantee Card */}
-        <div className="p-3.5 rounded-2xl bg-[var(--elevated-surface)] border border-[var(--card-border)] text-xs text-[var(--text-secondary)] mb-6 flex items-start gap-3">
-          <ShieldCheck size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-          <p className="leading-snug">
-            <strong className="text-[var(--text-primary)]">Zero Dummy Data Policy:</strong> The platform refuses static mock data to guarantee that every coefficient, GIS boundary, and carbon metric is strictly derived live from verified NISR microdata.
-          </p>
         </div>
 
         {/* Action Button */}
