@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rcei-backend.onrender.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
+  console.warn('VITE_API_URL environment variable is not defined; using default /api/v1 path.');
+}
 
 export interface DistrictMetric {
   biomass_reliance_rate: number;
