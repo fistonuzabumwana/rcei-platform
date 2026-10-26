@@ -36,6 +36,7 @@ function App() {
   const [error, setError] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [showMethodologyModal, setShowMethodologyModal] = useState(false)
+  const [showNoSimModal, setShowNoSimModal] = useState(false)
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null)
   
   // Track simulation results to update map
@@ -160,22 +161,17 @@ function App() {
     }
   }
 
-  const handleExportPolicyBrief = async () => {
+  const handleExportPolicyBrief = () => {
+    if (!simulationResult) {
+      setShowNoSimModal(true)
+      return
+    }
     setIsExporting(true)
     try {
-      let result = simulationResult
-      if (!result) {
-        // If simulator hasn't been run yet, run 30% baseline intervention for a complete report
-        try {
-          result = await simulateSubsidy(30, [], carbonPrice)
-        } catch (simErr) {
-          console.warn('Fallback simulation failed, exporting with baseline metrics:', simErr)
-        }
-      }
       generatePolicyBriefPDF({
         metrics,
-        simulationResult: result,
-        appliedSubsidy: result ? result.applied_subsidy : 0
+        simulationResult,
+        appliedSubsidy: simulationResult.applied_subsidy,
       })
     } catch (err) {
       console.error('Failed to generate Policy Brief PDF:', err)
@@ -285,7 +281,7 @@ function App() {
               onClick={handleExportPolicyBrief}
               disabled={isExporting}
               className="px-5 py-2.5 bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/25 font-bold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75"
-              title="Generate and download official NST2 Policy Brief PDF"
+              title="Download a brief that matches the scenario on screen"
             >
               <Download size={18} className={isExporting ? 'animate-bounce' : ''} />
               {isExporting ? 'Generating PDF...' : 'Export Policy Brief'}
@@ -539,7 +535,7 @@ function App() {
                 />
               </div>
               {!isMapFullscreen && (
-                <div className="z-10 flex flex-col justify-stretch">
+                <div id="subsidy-simulator" className="z-10 flex flex-col justify-stretch">
                   <Simulator onSimulationComplete={handleUserSimulationComplete} carbonPriceUsd={carbonPrice} />
                 </div>
               )}
@@ -594,6 +590,47 @@ function App() {
         onClose={() => setShowMethodologyModal(false)}
         modelInfo={modelInfo}
       />
+
+      {showNoSimModal && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md"
+          onClick={() => setShowNoSimModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="no-sim-title"
+            className="w-full max-w-md rounded-3xl bg-[var(--card-surface)] border border-[var(--card-border)] shadow-2xl p-6 text-[var(--text-primary)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="no-sim-title" className="text-xl font-black tracking-tight">
+              No scenario has been run yet
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+              The policy brief uses the subsidy and carbon price on screen. Run a scenario first, then export, so the PDF matches the dashboard.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNoSimModal(false)}
+                className="px-4 py-2 rounded-xl border border-[var(--card-border)] font-bold cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNoSimModal(false)
+                  document.getElementById('subsidy-simulator')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }}
+                className="px-4 py-2 rounded-xl bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] font-bold cursor-pointer"
+              >
+                Go to the simulator
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cloud Server Cold-Start Booting Notice */}
       <ServerBootingModal
