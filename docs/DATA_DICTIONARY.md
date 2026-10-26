@@ -17,7 +17,7 @@ This document provides the exhaustive specification for all survey variables ing
 | `district` | Integer | Administrative District Code | `11` (Nyarugenge) to `57` (Kirehe) |
 | `ur` | Byte | Urban / Rural Location | `1` = Urban, `2` = Rural |
 | `s5cq22a` | Byte | Primary Cooking Fuel | `1` = Firewood (Traditional Biomass)<br>`2` = Charcoal (Traditional Biomass)<br>`3` = Gas / LPG (Clean Energy)<br>`4` = Biogas (Clean Energy)<br>`5` = Electricity (Clean Energy)<br>`6` = Kerosene<br>`13` = Crop Residues / Peat |
-| `pov_jan` | Byte | Household Poverty Classification | `1` = Non-Poor<br>`2` = Poor<br>`3` = Extremely Poor |
+| `pov_jan` | Byte | Household Poverty Classification | `0` = Non-poor<br>`1` = Poor (includes extreme poor) |
 | `epov_jan` | Byte | Extreme Poverty Binary Indicator | `0` = Non-extreme poor<br>`1` = Extremely poor |
 | `weight` | Double | Household Expansion Weight | Normalized sample expansion multiplier |
 
@@ -85,7 +85,7 @@ The output of the data cleaning pipeline (`clean_eicv.py`) produces an aggregate
 | :--- | :--- | :--- | :--- |
 | `biomass_reliance_rate` | Float | Percentage (%) | Weighted proportion of households using firewood, charcoal, or crop waste as primary cooking fuel. |
 | `clean_energy_rate` | Float | Percentage (%) | Weighted proportion of households using LPG, biogas, or electricity. |
-| `poverty_rate` | Float | Percentage (%) | Poverty headcount rate (`pov_jan >= 2`), representing poor and extremely poor citizens. |
+| `poverty_rate` | Float | Percentage (%) | Poverty headcount rate (`pov_jan == 1`), household-weighted. |
 | `extreme_poverty_rate` | Float | Percentage (%) | Extreme poverty headcount rate (`epov_jan == 1`). |
 | `estimated_households` | Integer | Households | District total private households extrapolated via expansion weights. |
 | `transition_priority_score` | Float | Index (0–100) | Priority index calculated as: `(biomass_rate * 0.5) + (poverty_rate * 0.5)`. |
