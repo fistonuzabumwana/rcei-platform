@@ -16,8 +16,8 @@ The RCEI backend is an asynchronous, high-performance API service built with **F
 | :--- | :---: | :--- | :---: |
 | `/health` or `/api/v1/health` | `GET` | Health status, model state, and data sources (used for zero-cold-start warmups). | Live / No cache |
 | `/api/v1/metrics/districts` | `GET` | Complete 30-district baseline indicators fused from EICV7, Census 2022, EICV5, and SAS 2024. | In-Memory JSON |
-| `/api/v1/model/info` | `GET` | Statistical model validation metadata (RMSE, MAE, $R^2$, 5-fold CV, feature importances, citations). | Static JSON |
-| `/api/v1/simulate/subsidy` | `POST` | Executes econometric policy simulation under custom subsidy percentages and geographic targeting. | Real-time ML Evaluation |
+| `/api/v1/model/info` | `GET` | Observed-fuel classifier metrics (ROC-AUC, balanced accuracy, base rate, feature importances). | Static JSON |
+| `/api/v1/simulate/subsidy` | `POST` | Applies the disclosed subsidy scenario. Does not call the classifier. Subsidy must be 0–100. | Computed |
 
 ---
 
@@ -32,18 +32,13 @@ Warmup and health-check endpoint. Used by uptime monitors to keep free-tier cont
   "status": "healthy",
   "service": "Rwanda CleanEnergy Insights API",
   "model_loaded": true,
+  "model_role": "observed_fuel_classifier",
   "districts_count": 30,
   "data_sources": [
     "NISR EICV7 (2024) Household Survey Microdata",
     "NISR 5th Population and Housing Census (RPHC-2022)",
     "NISR EICV5 (2017) Household Survey Microdata (7-Year Trajectory)",
     "NISR Agricultural Survey (SAS / AHS 2024) Microdata (Livestock & Residue Bioeconomy)"
-  ],
-  "citations": [
-    "World Bank ESMAP (2023) Clean Cooking Fund Price Elasticity Framework",
-    "WHO (2022) Clean Household Energy Solutions Toolkit (CHEST)",
-    "Rwanda MININFRA / SNV National Domestic Biogas Program Feasibility Parameters",
-    "FAO / MINAGRI Rwanda Agricultural Biomass Residue Assessment"
   ]
 }
 ```
@@ -61,6 +56,9 @@ Returns baseline indicators for all 30 administrative districts of Rwanda.
     "clean_energy_rate": 22.57,
     "poverty_rate": 5.32,
     "extreme_poverty_rate": 0.63,
+    "clean_rate_non_poor": 23.84,
+    "clean_rate_moderate_poor": 0.0,
+    "clean_rate_extreme_poor": 0.0,
     "estimated_households": 106746,
     "transition_priority_score": 39.3,
     "census_2022_biomass_rate": 82.22,
@@ -87,33 +85,24 @@ Returns baseline indicators for all 30 administrative districts of Rwanda.
 ---
 
 ### 2.3 `GET /api/v1/model/info`
-Returns statistical validation metrics and feature importances for the Random Forest adoption model.
+Returns the observed-fuel classifier. It does not predict subsidy response.
 
-#### Response `200 OK`:
+#### Response `200 OK` (from `model_metrics.json`):
 ```json
 {
-  "model_type": "RandomForestRegressor",
-  "n_estimators": 100,
-  "max_depth": 10,
-  "sample_size": 62590,
-  "test_rmse": 0.0382,
-  "test_mae": 0.0294,
-  "test_r2": 0.9841,
-  "cv_r2_mean": 0.984,
-  "cv_r2_std": 0.0012,
+  "model_type": "RandomForestClassifier",
+  "target": "observed_eicv7_primary_cooking_fuel",
+  "sample_size": 14966,
+  "clean_fuel_base_rate": 0.0512,
+  "roc_auc": 0.8759,
+  "balanced_accuracy": 0.8677,
+  "cv_roc_auc_mean": 0.8634,
   "feature_importances": {
-    "is_urban": 0.048,
-    "is_poor": 0.024,
-    "is_extreme_poor": 0.146,
-    "lpg_kit_price": 0.782
+    "is_urban": 0.8033,
+    "is_poor": 0.1634,
+    "is_extreme_poor": 0.0332
   },
-  "methodology": "Behaviorally-calibrated econometric simulation combining EICV7 household microdata with ESMAP/World Bank willingness-to-pay elasticity parameters.",
-  "citations": [
-    "NISR EICV7 (2024) Household Survey Microdata",
-    "NISR 5th Population and Housing Census (RPHC-2022)",
-    "World Bank ESMAP (2023) Clean Cooking Fund Price Elasticity Framework",
-    "WHO (2022) Clean Household Energy Solutions Toolkit (CHEST)"
-  ]
+  "methodology": "Predicts observed EICV7 primary cooking fuel; it does not predict subsidy response."
 }
 ```
 
@@ -126,30 +115,33 @@ Simulates a clean fuel equipment subsidy across targeted districts.
 ```json
 {
   "subsidy_percentage": 40.0,
-  "target_districts": [22, 23, 25, 45, 44]
+  "target_districts": [],
+  "carbon_price_usd": 15
 }
 ```
-*Note: Pass an empty array `[]` for `target_districts` to simulate a universal nationwide policy across all 30 districts.*
+
+`subsidy_percentage` and `carbon_price_usd` must be between 0 and 100. Values outside that range return **422**. An empty `target_districts` array covers all 30 districts. `carbon_price_usd` defaults to 15.
+
+The shift rule is `min((subsidy/10) * (0.02 + poverty_rate/100 * 0.03), 1)`. It is an assumption. The classifier is not called.
 
 #### Response `200 OK`:
 ```json
 {
   "applied_subsidy": 40.0,
-  "target_districts": [22, 23, 25, 45, 44],
-  "targeted_districts_count": 5,
-  "total_converted_households": 190450,
-  "total_annual_charcoal_saved_tons": 228540.0,
-  "estimated_budget_rwf": 3809000000.0,
-  "carbon_credits_earned_tons": 685620.0,
-  "carbon_credit_revenue_rwf": 13369590000.0,
-  "net_policy_cost_rwf": -9560590000.0,
-  "avoided_charcoal_expenditure_rwf": 205686000000.0,
-  "annual_savings_per_household_rwf": 154200.0,
+  "carbon_price_usd": 15.0,
+  "scenario_rule": "shift = min((subsidy/10) * (0.02 + poverty_rate/100 * 0.03), 1)",
+  "targeted_districts_count": 30,
+  "total_converted_households": 336331,
+  "total_annual_charcoal_saved_tons": 74442.3,
+  "estimated_budget_rwf": 6726636689.62,
+  "carbon_credit_revenue_rwf": 4354877247.07,
+  "net_policy_cost_rwf": 2371759442.55,
   "bioeconomy": {
-    "national_biogas_viable_households": 331420,
-    "national_bioslurry_fertilizer_tons_year": 3977040,
-    "national_crop_residue_feedstock_tons": 1102540.0,
-    "national_pellet_potential_tons": 551270.0
+    "bioeconomy_scope": "national_baseline",
+    "national_biogas_viable_households": 390320,
+    "national_bioslurry_fertilizer_tons_year": 4683840,
+    "national_crop_residue_feedstock_tons": 6163552.0,
+    "national_pellet_potential_tons": 3081777.0
   },
   "district_impact": {
     "22": {
@@ -180,21 +172,11 @@ Simulates a clean fuel equipment subsidy across targeted districts.
     },
     {
       "year": 2024,
-      "business_as_usual": 88.4,
-      "with_policy": 74.2,
-      "with_policy_lower": 73.8,
-      "with_policy_upper": 74.6,
-      "is_historical": false,
-      "source": "EICV7 Survey Base"
-    },
-    {
-      "year": 2030,
-      "business_as_usual": 78.8,
-      "with_policy": 48.6,
-      "with_policy_lower": 45.5,
-      "with_policy_upper": 51.7,
-      "is_historical": false,
-      "source": "Econometric Simulation"
+      "business_as_usual": 94.0,
+      "with_policy": 83.7,
+      "with_policy_lower": 83.2,
+      "with_policy_upper": 84.2,
+      "is_historical": false
     }
   ]
 }
