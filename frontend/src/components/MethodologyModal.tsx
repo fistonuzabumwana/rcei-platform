@@ -41,7 +41,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium mt-1">
-                Scientific calibration, survey weighting, econometric simulation & circular bioeconomy nexus (Tracks 1 & 4)
+                Measured NISR baselines, an observed-fuel classifier, and a labeled subsidy scenario
               </p>
             </div>
           </div>
@@ -61,10 +61,10 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
           <div className="p-5 rounded-2xl bg-[var(--elevated-surface)] border border-[var(--card-border)]">
             <h3 className="text-sm font-extrabold flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
               <Layers size={16} />
-              1. Quadruple Official NISR Microdata Fusion (Track 1 & Track 4)
+              1. Four NISR microdata sources
             </h3>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
-              To achieve national policy credibility and bridge the gap between Agricultural Productivity (Track 1) and Clean Energy (Track 4), the RCEI engine fuses four official microdata releases from the National Institute of Statistics of Rwanda (NISR):
+              Track 3 uses four NISR releases already on disk: EICV7, the 2022 census, EICV5, and the 2024 agricultural survey. The dashboard cards are the household-weighted rates from that fusion.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,10 +105,10 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
               <div className="p-4 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]/60">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-xs text-[var(--text-primary)]">Agricultural Survey (SAS 2024)</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400">Agri-Energy Nexus (Tracks 1 & 4)</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400">SAS 2024</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  <strong>3,724 agricultural households</strong> across livestock (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">Section 9</code>) and crop harvests (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">Section 3 & 4</code>). Quantifies domestic biodigester adoption (&ge;2 cattle), organic bio-slurry fertilizer output (Track 1 soil fertility), and crop residue pellet potential.
+                  Livestock (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">Section 9</code>) and crop harvest kilograms (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">s3_q20</code>). Cattle counts are measured. The 0.75 household factor, 12 tonnes of slurry, the 1.15 residue ratio, and the 0.50 pellet recovery are assumptions.
                 </p>
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
             <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
               <TrendingDown size={16} className="shrink-0" />
               <span>
-                <strong>Empirical Longitudinal Proof across NISR Releases:</strong> National clean cooking adoption climbed from <strong>1.18% in 2017 (EICV5)</strong> to <strong>4.58% in 2022 (Census)</strong> to <strong>8.86% in 2024 (EICV7)</strong>. This 10-year empirical velocity validates our 2030 time-series projections toward NST2 targets.
+                <strong>Measured anchors, then a scenario.</strong> EICV5 (2017) and the 2022 census are historical points. The weighted EICV7 cooking-fuel rate is the number on the dashboard, about 93.9% biomass. Years after 2024 on the chart are a scenario band, not a 95% confidence interval.
               </span>
             </div>
           </div>
@@ -129,57 +129,52 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
               2. Econometric Model & Statistical Evaluation
             </h3>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
-              Clean cooking transition cannot be modeled with simplistic linear rules. We deployed a <strong>Random Forest Regressor</strong> trained on behaviorally-calibrated household microdata to capture non-linear interactions between capital equipment costs, household liquidity constraints, and urban supply chains:
+              A <strong>Random Forest classifier</strong> predicts the cooking fuel already recorded in EICV7 (<code className="text-xs">s5cq22a</code>). Features are urban/rural and poverty only. It does not predict what happens if a subsidy changes. The slider uses a separate disclosed rule: shift = min((subsidy/10) × (0.02 + poverty rate/100 × 0.03), 1).
             </p>
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-3 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)] text-center">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Test RMSE</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Test ROC-AUC</span>
                 <span className="text-lg font-black text-emerald-500">
-                  {modelInfo?.test_rmse ?? 0.0486}
+                  {modelInfo?.roc_auc?.toFixed(4) ?? '--'}
                 </span>
-                <span className="text-[9px] text-[var(--text-muted)] block">Root Mean Sq Err</span>
+                <span className="text-[9px] text-[var(--text-muted)] block">Held-out observed fuel</span>
               </div>
 
               <div className="p-3 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)] text-center">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Test MAE</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Balanced accuracy</span>
                 <span className="text-lg font-black text-indigo-500">
-                  {modelInfo?.test_mae ?? 0.0332}
+                  {modelInfo?.balanced_accuracy?.toFixed(4) ?? '--'}
                 </span>
-                <span className="text-[9px] text-[var(--text-muted)] block">Mean Absolute Err</span>
+                <span className="text-[9px] text-[var(--text-muted)] block">Not raw accuracy</span>
               </div>
 
               <div className="p-3 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)] text-center">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Test R² Score</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">Clean-fuel base rate</span>
                 <span className="text-lg font-black text-purple-500">
-                  {modelInfo?.test_r2 ?? 0.9767}
+                  {modelInfo?.clean_fuel_base_rate != null ? `${(modelInfo.clean_fuel_base_rate * 100).toFixed(1)}%` : '--'}
                 </span>
-                <span className="text-[9px] text-[var(--text-muted)] block">Variance Explained</span>
+                <span className="text-[9px] text-[var(--text-muted)] block">Unweighted sample</span>
               </div>
 
               <div className="p-3 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)] text-center">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">5-Fold CV R²</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase block">5-Fold CV AUC</span>
                 <span className="text-lg font-black text-teal-500">
-                  {modelInfo?.cv_r2_mean ?? 0.9759}
+                  {modelInfo?.cv_roc_auc_mean?.toFixed(4) ?? '--'}
                 </span>
-                <span className="text-[9px] text-[var(--text-muted)] block">Cross-Validated</span>
+                <span className="text-[9px] text-[var(--text-muted)] block">Cross-validated</span>
               </div>
             </div>
 
             {/* Feature Importances */}
             <div className="p-4 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]/60">
               <span className="text-xs font-bold text-[var(--text-primary)] block mb-2">
-                Random Forest Empirical Feature Importance Breakdown:
+                Feature importance for observed fuel choice:
               </span>
               <div className="space-y-2 text-xs">
                 {(() => {
                   const featureConfig: Record<string, { label: string; barColor: string; textColor: string }> = {
-                    lpg_kit_price: {
-                      label: 'LPG Kit Effective Equipment Price',
-                      barColor: 'bg-indigo-600',
-                      textColor: 'text-indigo-600 dark:text-indigo-400'
-                    },
                     is_urban: {
                       label: 'Urban Infrastructure & Density',
                       barColor: 'bg-indigo-500',
@@ -205,12 +200,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                           pct: (val * 100).toFixed(1)
                         }))
                         .sort((a, b) => b.value - a.value)
-                    : [
-                        { key: 'lpg_kit_price', value: 0.812, pct: '81.2' },
-                        { key: 'is_urban', value: 0.127, pct: '12.7' },
-                        { key: 'is_poor', value: 0.034, pct: '3.4' },
-                        { key: 'is_extreme_poor', value: 0.028, pct: '2.8' },
-                      ]
+                    : []
 
                   return entries.map(item => {
                     const cfg = featureConfig[item.key] || {
@@ -241,10 +231,10 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
             <div className="p-5 rounded-2xl bg-[var(--elevated-surface)] border border-[var(--card-border)]">
               <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 mb-2">
                 <BookOpen size={14} />
-                Behavioral Elasticity Calibration
+                Subsidy scenario rule
               </h4>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Rather than arbitrary curves, willingness-to-pay (WTP) Sigmoids are calibrated using <strong>World Bank ESMAP (Clean Cooking Fund)</strong> and <strong>WHO Household Energy Toolkit</strong> elasticity parameters (-0.65 to -0.85 price elasticity for East Africa). Poorer households exhibit 2.5x higher price sensitivity, properly simulated across Rwanda's 30 districts.
+                The slider is not the classifier. For a subsidy above zero, the share of biomass households assumed to switch is min((subsidy/10) × (0.02 + poverty rate/100 × 0.03), 1). Kit price 50,000 RWF, 1.2 tonnes per household, and the carbon factor are assumptions.
               </p>
             </div>
 
@@ -254,7 +244,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                 Article 6 Carbon Offsetting
               </h4>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Carbon credits are computed under <strong>UNFCCC CDM Methodology AMS-II.G</strong>: 1 ton of charcoal saved avoids 3.0 tons CO2e equivalent. Monetized at conservative voluntary carbon prices ($15/ton CO2e) under Paris Agreement Article 6 sovereign carbon trading, turning subsidy expenditure into national profit.
+                Each tonne of charcoal in the scenario is multiplied by 3.0 to estimate tCO2e, then by the selected dollar price and 1,300 RWF per USD. Those three numbers are assumptions. A negative net cost is a scenario surplus, not proof of a signed carbon sale.
               </p>
             </div>
           </div>
@@ -263,7 +253,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
           <div className="pt-4 border-t border-[var(--divider)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} className="text-emerald-500" />
-              <span>Calibrated against peer-reviewed energy economics literature</span>
+              <span>Classifier trained on observed EICV7 fuel. Subsidy results are labeled assumptions.</span>
             </div>
             <div className="font-semibold text-indigo-700 dark:text-indigo-400">
               National Institute of Statistics of Rwanda • Big Data Hackathon 2026

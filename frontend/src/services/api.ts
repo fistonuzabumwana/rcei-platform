@@ -9,6 +9,8 @@ if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
 export interface DistrictMetric {
   biomass_reliance_rate: number;
   clean_energy_rate: number;
+  measured_clean_energy_rate?: number;
+  measured_biomass_reliance_rate?: number;
   poverty_rate: number;
   extreme_poverty_rate?: number;
   estimated_households: number;
@@ -39,25 +41,38 @@ export interface DistrictMetric {
   pellet_sustained_households?: number;
   recommended_clean_pathway?: string;
   pathway_tag?: string;
+
+  clean_rate_non_poor?: number;
+  clean_rate_moderate_poor?: number;
+  clean_rate_extreme_poor?: number;
+  households_non_poor?: number;
+  households_moderate_poor?: number;
+  households_extreme_poor?: number;
 }
 
 export interface ModelInfo {
   model_type: string;
-  n_estimators: number;
-  max_depth: number;
+  target?: string;
+  n_estimators?: number;
+  max_depth?: number;
   sample_size: number;
-  test_rmse: number;
-  test_mae: number;
-  test_r2: number;
-  cv_r2_mean: number;
-  cv_r2_std: number;
+  test_size?: number;
+  clean_fuel_base_rate?: number;
+  roc_auc?: number;
+  balanced_accuracy?: number;
+  cv_roc_auc_mean?: number;
+  cv_roc_auc_std?: number;
   feature_importances: Record<string, number>;
   methodology: string;
-  citations: string[];
+  subsidy_scenario?: string;
+  citations?: string[];
 }
 
 export interface SimulationResult {
   applied_subsidy: number;
+  carbon_price_usd?: number;
+  scenario_rule?: string;
+  forecast_note?: string;
   total_converted_households: number;
   total_annual_charcoal_saved_tons: number;
   estimated_budget_rwf: number;
@@ -71,10 +86,15 @@ export interface SimulationResult {
   targeted_districts_count?: number;
 
   bioeconomy?: {
+    bioeconomy_scope?: string;
     national_biogas_viable_households: number;
     national_bioslurry_fertilizer_tons_year: number;
     national_crop_residue_feedstock_tons: number;
     national_pellet_potential_tons: number;
+    targeted_biogas_viable_households?: number;
+    targeted_bioslurry_fertilizer_tons_year?: number;
+    targeted_crop_residue_feedstock_tons?: number;
+    targeted_pellet_potential_tons?: number;
   };
 
   district_impact: Record<string, {
@@ -94,7 +114,7 @@ export interface SimulationResult {
   }>;
 }
 
-// Check backend health status:
+// Check backend health status:::
 // Returns 'live' if /health responds 200 OK immediately
 // Returns 'cold_starting' if connection refused, network error, or 502/503/504 gateway response
 export const checkBackendHealth = async (): Promise<'live' | 'cold_starting' | 'error'> => {
@@ -137,10 +157,15 @@ export const fetchModelInfo = async (): Promise<ModelInfo> => {
   return response.data;
 };
 
-export const simulateSubsidy = async (subsidy: number, targets: number[] = []): Promise<SimulationResult> => {
+export const simulateSubsidy = async (
+  subsidy: number,
+  targets: number[] = [],
+  carbonPriceUsd: number = 15
+): Promise<SimulationResult> => {
   const response = await axios.post(`${API_BASE_URL}/simulate/subsidy`, {
     subsidy_percentage: subsidy,
-    target_districts: targets
+    target_districts: targets,
+    carbon_price_usd: carbonPriceUsd
   }, { timeout: 45000 });
   return response.data;
 };
