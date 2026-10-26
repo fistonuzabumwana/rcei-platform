@@ -62,7 +62,20 @@ export interface ModelInfo {
   balanced_accuracy?: number;
   cv_roc_auc_mean?: number;
   cv_roc_auc_std?: number;
+  features?: string[];
+  feature_sources?: Record<string, string>;
   feature_importances: Record<string, number>;
+  baseline_three_flag_model?: {
+    features: string[];
+    roc_auc: number;
+    balanced_accuracy: number;
+    cv_roc_auc_mean: number;
+  };
+  measured_cross_tabs_weighted?: {
+    clean_rate_grid_connected_pct: number;
+    clean_rate_not_grid_connected_pct: number;
+    clean_rate_by_quintile_pct: Record<string, number>;
+  };
   methodology: string;
   subsidy_scenario?: string;
   citations?: string[];
@@ -112,9 +125,15 @@ export interface SimulationResult {
     is_historical?: boolean;
     source?: string;
   }>;
+  forecast_slopes?: {
+    bau_annual_decline_pp: number;
+    bau_source?: string;
+    with_policy_annual_decline_pp: number;
+    policy_momentum_rule?: string;
+  };
 }
 
-// Check backend health status:::
+// Check backend health status:
 // Returns 'live' if /health responds 200 OK immediately
 // Returns 'cold_starting' if connection refused, network error, or 502/503/504 gateway response
 export const checkBackendHealth = async (): Promise<'live' | 'cold_starting' | 'error'> => {

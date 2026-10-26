@@ -21,9 +21,13 @@ interface ForecastChartProps {
     with_policy_lower?: number
     with_policy_upper?: number
   }>
+  slopes?: {
+    bau_annual_decline_pp: number
+    with_policy_annual_decline_pp: number
+  }
 }
 
-export default function ForecastChart({ data }: ForecastChartProps) {
+export default function ForecastChart({ data, slopes }: ForecastChartProps) {
   const { isDark } = useTheme()
 
   if (!data || data.length === 0) return null
@@ -61,7 +65,13 @@ export default function ForecastChart({ data }: ForecastChartProps) {
             2030 Scenario Path
           </h3>
           <p className="text-xs md:text-sm font-medium text-[var(--text-secondary)]">
-            2017 and 2022 are measured. Later years are a scenario band, not a 95% confidence interval.
+            2017, 2022 and 2024 are measured. Later years are a scenario band, not a 95% confidence interval.
+            {slopes && (
+              <>
+                {' '}Business as usual continues the measured 2017–2024 decline of {slopes.bau_annual_decline_pp.toFixed(2)} points/yr;
+                the policy line uses {slopes.with_policy_annual_decline_pp.toFixed(2)} points/yr (assumption).
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">

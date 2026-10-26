@@ -75,7 +75,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">Primary Baseline</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  <strong>14,845 households</strong> across all 30 districts. Expanded with official survey weights (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">weight</code>). Measures primary cooking fuel (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">s5cq22a</code>), poverty headcount (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">pov_jan</code>), and extreme poverty (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">epov_jan</code>).
+                  <strong>15,054 sampled households</strong> (14,966 with a recorded cooking fuel) across all 30 districts, expanding to 3,289,805. Expanded with official survey weights (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">weight</code>). Measures primary cooking fuel (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">s5cq22a</code>), poverty headcount (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">pov_jan</code>), and extreme poverty (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">epov_jan</code>).
                 </p>
               </div>
 
@@ -83,10 +83,10 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
               <div className="p-4 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]/60">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-xs text-[var(--text-primary)]">RPHC-2022 Census (5th PHC)</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Ground-Truth Benchmark</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">2022 Anchor</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  <strong>331,917 census households</strong> (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">PHC5_Public_microdata.dta</code>). Ground-truth cooking fuel benchmark (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">h16</code>). Provides multi-year empirical verification of the transition velocity.
+                  <strong>331,917 households</strong> in the public-use census sample (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">PHC5_Public_microdata.dta</code>, household-head rows), not the full enumeration. Cooking fuel from <code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">h16</code>, unweighted district means. National biomass 94.84%.
                 </p>
               </div>
 
@@ -97,7 +97,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-400">7-Year Longitudinal Anchor</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  <strong>14,580 households</strong> (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">cs_S0_S5_Household.dta</code>). Establishes the historical 2017 clean cooking anchor (1.18% clean / 97.92% biomass reliance), proving longitudinal trajectory across 3 distinct NISR milestones.
+                  <strong>14,580 households</strong> (<code className="text-xs px-1 py-0.5 bg-slate-500/10 rounded">cs_S0_S5_Household.dta</code>). Household-weighted 2017 anchor: 97.88% biomass, 1.22% clean. The measured 2017–2024 decline (about 0.56 points per year) is the business-as-usual slope on the chart.
                 </p>
               </div>
 
@@ -129,7 +129,7 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
               2. Econometric Model & Statistical Evaluation
             </h3>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
-              A <strong>Random Forest classifier</strong> predicts the cooking fuel already recorded in EICV7 (<code className="text-xs">s5cq22a</code>). Features are urban/rural and poverty only. It does not predict what happens if a subsidy changes. The slider uses a separate disclosed rule: shift = min((subsidy/10) × (0.02 + poverty rate/100 × 0.03), 1).
+              A <strong>Random Forest classifier</strong> predicts the cooking fuel already recorded in EICV7 (<code className="text-xs">s5cq22a</code>). "Clean" is gas, electricity, biogas, briquette and kerosene; kerosene is not WHO-clean but is 0.006% of weighted households, so it does not move any rate. Six measured EICV7 features: urban/rural, moderate and extreme poverty, grid connection (<code className="text-xs">s5cq14</code>), consumption quintile (<code className="text-xs">quintile</code>), and minutes to the nearest food market (<code className="text-xs">s5fq3a/b</code>). It does not predict what happens if a subsidy changes. The slider uses a separate disclosed rule: shift = min((subsidy/10) × (0.02 + poverty rate/100 × 0.03), 1).
             </p>
 
             {/* Metrics Grid */}
@@ -189,6 +189,21 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                       label: 'Extreme Poverty Headcount',
                       barColor: 'bg-rose-500',
                       textColor: 'text-rose-600 dark:text-rose-400'
+                    },
+                    is_grid_connected: {
+                      label: 'Connected to Electricity Grid',
+                      barColor: 'bg-emerald-500',
+                      textColor: 'text-emerald-600 dark:text-emerald-400'
+                    },
+                    consumption_quintile: {
+                      label: 'Consumption Quintile (1–5)',
+                      barColor: 'bg-purple-500',
+                      textColor: 'text-purple-600 dark:text-purple-400'
+                    },
+                    minutes_to_food_market: {
+                      label: 'Minutes to Nearest Food Market',
+                      barColor: 'bg-teal-500',
+                      textColor: 'text-teal-600 dark:text-teal-400'
                     }
                   }
 
@@ -224,6 +239,34 @@ export default function MethodologyModal({ isOpen, onClose, modelInfo }: Methodo
                 })()}
               </div>
             </div>
+
+            {/* Before / after and the measured cross-tabs behind the new features */}
+            {(modelInfo?.baseline_three_flag_model || modelInfo?.measured_cross_tabs_weighted) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-xs">
+                {modelInfo?.baseline_three_flag_model && (
+                  <div className="p-4 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]/60">
+                    <span className="font-bold text-[var(--text-primary)] block mb-1.5">Same split, three flags only</span>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">
+                      Urban, moderate poor, extreme poor: test ROC-AUC{' '}
+                      <strong>{modelInfo.baseline_three_flag_model.roc_auc.toFixed(4)}</strong>. Adding grid connection, consumption quintile and market distance lifts it to{' '}
+                      <strong>{modelInfo.roc_auc?.toFixed(4)}</strong>. All six are measured EICV7 variables.
+                    </p>
+                  </div>
+                )}
+                {modelInfo?.measured_cross_tabs_weighted && (
+                  <div className="p-4 rounded-xl bg-[var(--card-surface)] border border-[var(--card-border)]/60">
+                    <span className="font-bold text-[var(--text-primary)] block mb-1.5">Measured clean-fuel rate (weighted)</span>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">
+                      Grid-connected <strong>{modelInfo.measured_cross_tabs_weighted.clean_rate_grid_connected_pct.toFixed(1)}%</strong> vs not connected{' '}
+                      <strong>{modelInfo.measured_cross_tabs_weighted.clean_rate_not_grid_connected_pct.toFixed(2)}%</strong>. By quintile:{' '}
+                      {Object.entries(modelInfo.measured_cross_tabs_weighted.clean_rate_by_quintile_pct)
+                        .map(([q, v]) => `${q} ${v.toFixed(1)}%`)
+                        .join(' · ')}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Section 3: Behavioral Calibration & Climate Finance */}

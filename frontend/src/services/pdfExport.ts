@@ -16,6 +16,18 @@ const DISTRICT_NAMES: Record<string, string> = {
   "51": "Rwamagana", "52": "Nyagatare", "53": "Gatsibo", "54": "Kayonza", "55": "Kirehe", "56": "Ngoma", "57": "Bugesera"
 }
 
+const nationalBiomassRate = (metrics: Record<string, DistrictMetric> | null): number | null => {
+  if (!metrics) return null
+  let hh = 0
+  let biomassHh = 0
+  for (const m of Object.values(metrics)) {
+    const baseline = m.measured_biomass_reliance_rate ?? m.biomass_reliance_rate
+    hh += m.estimated_households
+    biomassHh += (baseline / 100) * m.estimated_households
+  }
+  return hh > 0 ? (biomassHh / hh) * 100 : null
+}
+
 export interface PolicyBriefData {
   metrics: Record<string, DistrictMetric> | null
   simulationResult: SimulationResult | null
@@ -140,11 +152,13 @@ export function generatePolicyBriefPDF({
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.8)
   doc.setTextColor(...textDark)
+  const measuredBiomass = nationalBiomassRate(metrics)
+  const measuredText = measuredBiomass != null ? `${measuredBiomass.toFixed(1)}% (EICV7, household-weighted)` : 'the measured EICV7 rate'
   const summaryText = 
-    `Under the National Strategy for Transformation (NST2), the Government of Rwanda is committed to drastically reducing ` +
-    `household biomass dependency from over 80% to under 50% by 2030. This policy brief provides empirical socioeconomic evaluations ` +
-    `based on measured NISR EICV7 district rates. The subsidy path is a disclosed scenario, not a prediction from the fuel classifier. Findings establish targeted household conversion ` +
-    `potential, displaced charcoal tons, consumer financial savings, fiscal subsidy requirements, and carbon monetization opportunities.`
+    `Under the National Strategy for Transformation (NST2), the Government of Rwanda aims to reduce the share of households ` +
+    `cooking mainly with biomass from ${measuredText} to under 50% by 2029/30. This brief reports measured NISR EICV7 district rates. ` +
+    `The subsidy path is a disclosed scenario, not a prediction from the fuel classifier. Figures cover household conversion ` +
+    `under the scenario, displaced charcoal tonnes, avoided charcoal spending, the subsidy budget, and carbon revenue at the selected price.`
   const splitSummary = doc.splitTextToSize(summaryText, contentWidth - 11)
   doc.text(splitSummary, margin + 6, currentY + 11)
 
@@ -289,29 +303,35 @@ export function generatePolicyBriefPDF({
   doc.text('2030 National Biomass Reliance Forecast Trajectory', margin, currentY)
   currentY += 3.5
 
-  const rawForecastData = simulationResult?.forecast && simulationResult.forecast.length > 0
-    ? simulationResult.forecast
-    : [
-        { year: 2024, business_as_usual: 80.5, with_policy: 72.0, is_historical: false },
-        { year: 2025, business_as_usual: 79.0, with_policy: 69.5, is_historical: false },
-        { year: 2026, business_as_usual: 77.5, with_policy: 67.0, is_historical: false },
-        { year: 2027, business_as_usual: 76.0, with_policy: 64.5, is_historical: false },
-        { year: 2028, business_as_usual: 74.5, with_policy: 62.0, is_historical: false },
-        { year: 2029, business_as_usual: 73.0, with_policy: 59.5, is_historical: false },
-        { year: 2030, business_as_usual: 71.5, with_policy: 57.0, is_historical: false },
-      ]
+  // Only the API forecast is printed. No placeholder trajectory is substituted when the simulation is unavailable.
+  const rawForecastData = simulationResult?.forecast ?? []
 
   // Filter to policy simulation trajectory years (2024–2030) to avoid showing pre-policy historical anchors as policy gaps
   const policyTrajectory = rawForecastData.filter(f => !f.is_historical && f.year >= 2024)
   const forecastData = policyTrajectory.length > 0 ? policyTrajectory : rawForecastData
 
-  const forecastTableBody = forecastData.map(f => [
-    f.year.toString(),
-    `${f.business_as_usual.toFixed(1)}%`,
-    `${f.with_policy.toFixed(1)}%`,
-    '< 50.0%',
-    f.with_policy <= 50 ? 'Target Met' : `${(f.with_policy - 50).toFixed(1)}% gap`
-  ])
+  const forecastTableBody = forecastData.length > 0
+    ? forecastData.map(f => [
+        f.year.toString(),
+        `${f.business_as_usual.toFixed(1)}%`,
+        `${f.with_policy.toFixed(1)}%`,
+        '< 50.0%',
+        f.with_policy <= 50 ? 'Target Met' : `${(f.with_policy - 50).toFixed(1)}% gap`
+      ])
+    : [['--', 'Run a scenario to populate', '--', '< 50.0%', '--']]
+
+  const slopes = simulationResult?.forecast_slopes
+  if (slopes) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.8)
+    doc.setTextColor(...textMuted)
+    doc.text(
+      `Business as usual continues the measured EICV5 (2017) to EICV7 (2024) decline of ${slopes.bau_annual_decline_pp.toFixed(2)} points/yr. ` +
+      `The policy line uses ${slopes.with_policy_annual_decline_pp.toFixed(2)} points/yr (bau + subsidy/100 x 1.5, an assumption).`,
+      margin, currentY + 1.5
+    )
+    currentY += 4
+  }
 
   autoTable(doc, {
     startY: currentY,
@@ -405,7 +425,7 @@ export function generatePolicyBriefPDF({
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.8)
   doc.setTextColor(...textMuted)
-  doc.text('Complete 30-district baseline vs projected transitions powered by EICV7 microdata & ML adoption models', margin, currentY)
+  doc.text('All 30 districts: measured EICV7 baseline and the projected rate under the disclosed subsidy scenario', margin, currentY)
 
   currentY += 4
 
