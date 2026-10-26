@@ -297,12 +297,21 @@ export default function MapView({
                         ? `${(100 - selectedData.census_2022_biomass_rate).toFixed(1)}%`
                         : '--')}</span>
                   <span>&rarr;</span>
-                  <span className="text-indigo-600 dark:text-indigo-400">'24: {selectedData.clean_energy_rate.toFixed(1)}%</span>
+                  <span className="text-indigo-600 dark:text-indigo-400">'24: {(selectedData.measured_clean_energy_rate ?? selectedData.clean_energy_rate).toFixed(1)}%</span>
                 </div>
               </div>
             )}
 
-            {/* Prescribed Clean Pathway (Track 1 & Track 4 Bioenergy Nexus) */}
+            <div className="p-2 rounded-lg bg-[var(--elevated-surface)] border border-[var(--card-border)] text-[10px]">
+              <span className="text-[var(--text-muted)] block font-semibold mb-1">Clean fuel by poverty (EICV7, weighted):</span>
+              <div className="grid grid-cols-3 gap-1 font-bold text-[var(--text-primary)]">
+                <span>Non-poor {selectedData.clean_rate_non_poor?.toFixed(1) ?? '--'}%</span>
+                <span>Moderate {selectedData.clean_rate_moderate_poor?.toFixed(1) ?? '--'}%</span>
+                <span>Extreme {selectedData.clean_rate_extreme_poor?.toFixed(1) ?? '--'}%</span>
+              </div>
+            </div>
+
+            {/* Recommended pathway from measured cattle and crop shares plus assumption multipliers */}
             {selectedData.recommended_clean_pathway && (
               <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px]">
                 <span className="text-emerald-700 dark:text-emerald-300 font-extrabold uppercase flex items-center gap-1 tracking-wider">

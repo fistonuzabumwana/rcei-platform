@@ -342,7 +342,7 @@ export default function DistrictMatrixTable({
           }`}
         >
           <span>Agri-Energy Nexus & Bioeconomy</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300">SAS 2024 Track 1+4</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300">SAS 2024</span>
         </button>
       </div>
 
