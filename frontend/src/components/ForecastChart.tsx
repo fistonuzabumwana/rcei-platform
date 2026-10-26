@@ -58,10 +58,10 @@ export default function ForecastChart({ data }: ForecastChartProps) {
         <div>
           <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <TrendingDown size={22} className="text-[var(--accent)]" />
-            2030 Time-Series Forecast & Uncertainty Bands
+            2030 Scenario Path
           </h3>
           <p className="text-xs md:text-sm font-medium text-[var(--text-secondary)]">
-            Projected National Biomass Reliance (%) {hasEmpiricalCi ? 'with 95% Econometric Confidence Intervals' : 'Simulation Trajectory'}
+            2017 and 2022 are measured. Later years are a scenario band, not a 95% confidence interval.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export default function ForecastChart({ data }: ForecastChartProps) {
           {hasEmpiricalCi && (
             <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-500/20 shadow-sm">
               <ShieldCheck size={12} />
-              95% CI Range
+              Scenario band
             </span>
           )}
           <div className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/20 shadow-sm">
@@ -135,7 +135,7 @@ export default function ForecastChart({ data }: ForecastChartProps) {
                   const lower = item.payload.with_policy_lower
                   const upper = item.payload.with_policy_upper
                   if (typeof lower === 'number' && typeof upper === 'number') {
-                    return [`${value}% (95% CI: ${lower}% – ${upper}%)`, name]
+                    return [`${value}% (scenario band: ${lower}% – ${upper}%)`, name]
                   }
                   return [`${value}%`, name]
                 }
@@ -168,10 +168,9 @@ export default function ForecastChart({ data }: ForecastChartProps) {
               label={{ position: 'top', value: 'EICV7 Base (2024)', fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }}
             />
             
-            {/* 95% Confidence Interval Area Band (fills between with_policy_lower and with_policy_upper) */}
             {hasEmpiricalCi && (
               <Area
-                name="95% CI Uncertainty Band"
+                name="Scenario band"
                 type="monotone"
                 dataKey="ci_range"
                 stroke="#818cf8"

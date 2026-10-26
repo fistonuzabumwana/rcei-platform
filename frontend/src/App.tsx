@@ -16,7 +16,8 @@ import {
   PlayCircle, 
   Loader2,
   BookOpen,
-  Trophy
+  Trophy,
+  Menu
 } from 'lucide-react'
 import MapView from './components/MapView'
 import Simulator from './components/Simulator'
@@ -49,6 +50,9 @@ function App() {
   // Evaluator tour banner state
   const [showTourBanner, setShowTourBanner] = useState(true)
   const [isSimulatingPreset, setIsSimulatingPreset] = useState(false)
+  const [carbonPrice, setCarbonPrice] = useState(15)
+  const [carbonUpdating, setCarbonUpdating] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   // Cloud server cold-start booting state
   const [isServerBooting, setIsServerBooting] = useState(false)
@@ -61,6 +65,7 @@ function App() {
   const handleUserSimulationComplete = (result: any) => {
     latestSimulationId.current += 1
     setSimulationResult(result)
+    if (result) setShowTourBanner(false)
   }
 
   const loadDataFromBackend = async (attempt = 1) => {
@@ -68,7 +73,13 @@ function App() {
     
     // Check if backend is waking up or already live
     const health = await checkBackendHealth()
-    if (health === 'cold_starting') {
+    if (health === 'cold_starting' || health === 'error') {
+      if (attempt >= 8) {
+        setError(true)
+        setLoading(false)
+        setIsServerBooting(false)
+        return
+      }
       setIsServerBooting(true)
       setTimeout(() => {
         loadDataFromBackend(attempt + 1)
@@ -84,6 +95,12 @@ function App() {
       setError(false)
       fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
     } catch {
+      if (attempt >= 8) {
+        setError(true)
+        setLoading(false)
+        setIsServerBooting(false)
+        return
+      }
       setIsServerBooting(true)
       setTimeout(() => {
         loadDataFromBackend(attempt + 1)
@@ -99,22 +116,47 @@ function App() {
   // Calculate dynamic stats
   let avgBiomass = 0;
   let avgClean = 0;
+  let avgPoverty = 0;
+  let totalHouseholds = 0;
   
   if (metrics) {
     const districts = Object.values(metrics);
-    let totalHouseholds = 0;
     let totalBiomass = 0;
     let totalClean = 0;
+    let totalPoverty = 0;
     
     districts.forEach(d => {
       totalHouseholds += d.estimated_households;
       totalBiomass += (d.biomass_reliance_rate / 100) * d.estimated_households;
       totalClean += (d.clean_energy_rate / 100) * d.estimated_households;
+      totalPoverty += (d.poverty_rate / 100) * d.estimated_households;
     });
 
     if (totalHouseholds > 0) {
       avgBiomass = (totalBiomass / totalHouseholds) * 100;
       avgClean = (totalClean / totalHouseholds) * 100;
+      avgPoverty = (totalPoverty / totalHouseholds) * 100;
+    }
+  }
+
+  const handleCarbonPriceChange = async (price: number) => {
+    setCarbonPrice(price)
+    if (!simulationResult || !simulationResult.applied_subsidy) return
+    setCarbonUpdating(true)
+    const reqId = ++latestSimulationId.current
+    try {
+      const res = await simulateSubsidy(
+        simulationResult.applied_subsidy,
+        simulationResult.target_districts ?? [],
+        price
+      )
+      if (latestSimulationId.current === reqId) {
+        setSimulationResult(res)
+      }
+    } catch (err) {
+      console.error('Failed to reprice carbon:', err)
+    } finally {
+      if (latestSimulationId.current === reqId) setCarbonUpdating(false)
     }
   }
 
@@ -125,7 +167,7 @@ function App() {
       if (!result) {
         // If simulator hasn't been run yet, run 30% baseline intervention for a complete report
         try {
-          result = await simulateSubsidy(30)
+          result = await simulateSubsidy(30, [], carbonPrice)
         } catch (simErr) {
           console.warn('Fallback simulation failed, exporting with baseline metrics:', simErr)
         }
@@ -146,9 +188,10 @@ function App() {
     setIsSimulatingPreset(true)
     const presetReqId = ++latestSimulationId.current
     try {
-      const res = await simulateSubsidy(subsidy)
+      const res = await simulateSubsidy(subsidy, [], carbonPrice)
       if (latestSimulationId.current === presetReqId) {
         setSimulationResult(res)
+        setShowTourBanner(false)
         setTimeout(() => {
           const resultsEl = document.getElementById('simulation-results-section')
           if (resultsEl) {
@@ -177,9 +220,10 @@ function App() {
               </h1>
             </div>
             <p className="mt-2 text-[var(--text-secondary)] font-medium ml-12">NST2 Decision Platform & Socioeconomic Simulator</p>
+            <p className="mt-1 text-sm text-[var(--text-muted)] ml-12">Isesengura ry'ingufu zisukuye</p>
           </div>
-          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 items-center">
-            <ThemeToggle />
+          <div className="flex flex-row flex-wrap gap-2 items-center">
+            <div className="hidden md:block"><ThemeToggle /></div>
             <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : isServerBooting ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
               {loading || isServerBooting ? (
                 <span className="relative flex h-2.5 w-2.5">
@@ -202,22 +246,41 @@ function App() {
                 {isServerBooting ? `Booting Server (Attempt #${bootAttemptCount})...` : loading ? 'Connecting...' : error ? 'Connection Error' : 'Live Cloud Connected'}
               </span>
             </div>
-            <button 
-              onClick={() => setShowMethodologyModal(true)}
-              className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
-              title="Inspect dual NISR microdata fusion, model validation metrics (RMSE, R2), and behavioral calibration"
-            >
-              <BookOpen size={18} className="text-indigo-500" />
-              <span>Data & Methodology</span>
-            </button>
-            <button 
-              onClick={() => exportDistrictsToCSV(metrics, simulationResult)}
-              className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
-              title="Download raw 30-district baseline & simulation dataset in CSV format"
-            >
-              <FileSpreadsheet size={18} className="text-emerald-500" />
-              <span>Export CSV</span>
-            </button>
+            <div className="hidden md:flex items-center gap-2">
+              <button 
+                onClick={() => setShowMethodologyModal(true)}
+                className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
+                title="Measured baselines, classifier ROC-AUC, and the subsidy scenario rule"
+              >
+                <BookOpen size={18} className="text-indigo-500" />
+                <span>Data & Methodology</span>
+              </button>
+              <button 
+                onClick={() => exportDistrictsToCSV(metrics, simulationResult)}
+                className="px-4 py-2.5 bg-[var(--elevated-surface)] hover:bg-[var(--card-surface)] text-[var(--text-primary)] border border-[var(--card-border)] rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:border-indigo-400"
+                title="Download raw 30-district baseline and simulation dataset in CSV format"
+              >
+                <FileSpreadsheet size={18} className="text-emerald-500" />
+                <span>Export CSV</span>
+              </button>
+            </div>
+            <div className="relative md:hidden">
+              <button
+                type="button"
+                onClick={() => setMoreMenuOpen(open => !open)}
+                className="px-3 py-2.5 bg-[var(--elevated-surface)] border border-[var(--card-border)] rounded-xl text-[var(--text-primary)] cursor-pointer"
+                aria-label="More actions"
+              >
+                <Menu size={18} />
+              </button>
+              {moreMenuOpen && (
+                <div className="absolute right-0 mt-2 z-50 w-52 rounded-xl border border-[var(--card-border)] bg-[var(--card-surface)] shadow-xl p-2 flex flex-col gap-2">
+                  <ThemeToggle />
+                  <button type="button" onClick={() => { setShowMethodologyModal(true); setMoreMenuOpen(false) }} className="px-3 py-2 text-left text-sm font-bold rounded-lg hover:bg-[var(--elevated-surface)] cursor-pointer">Data & Methodology</button>
+                  <button type="button" onClick={() => { exportDistrictsToCSV(metrics, simulationResult); setMoreMenuOpen(false) }} className="px-3 py-2 text-left text-sm font-bold rounded-lg hover:bg-[var(--elevated-surface)] cursor-pointer">Export CSV</button>
+                </div>
+              )}
+            </div>
             <button 
               onClick={handleExportPolicyBrief}
               disabled={isExporting}
@@ -313,7 +376,7 @@ function App() {
                       </h4>
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                      Watch the 30-district choropleth map turn green. Toggle <strong>Carbon Price Sensitivity ($10, $15, $25)</strong> to prove Article 6 sovereign profit.
+                      Watch the 30-district map. The carbon prices ($10, $15, $25) are assumptions, and the fiscal card uses the price the API returns.
                     </p>
                   </div>
                   <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-[var(--card-border)]/50 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
@@ -397,6 +460,7 @@ function App() {
             </div>
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl pointer-events-none"></div>
@@ -405,7 +469,7 @@ function App() {
                 <div className="p-2.5 bg-rose-500/10 rounded-xl text-[var(--danger)]"><Flame className="w-5 h-5" /></div>
               </div>
               <p className="text-4xl font-black text-[var(--text-primary)] relative">{metrics ? avgBiomass.toFixed(1) + '%' : '--%'}</p>
-              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">National Average (Weighted)</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">Measured EICV7, household-weighted · {totalHouseholds.toLocaleString()} households</p>
             </div>
             
             <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
@@ -415,19 +479,23 @@ function App() {
                 <div className="p-2.5 bg-emerald-500/10 rounded-xl text-[var(--success)]"><Zap className="w-5 h-5" /></div>
               </div>
               <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-500 to-teal-400 dark:from-[#34D399] dark:to-teal-300 relative">{metrics ? avgClean.toFixed(1) + '%' : '--%'}</p>
-              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">NST2 Target: 100% by 2030</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">Measured EICV7. NST2 goal is under 50% biomass.</p>
             </div>
 
             <div className="glass-panel p-8 hover-lift relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 blur-2xl pointer-events-none"></div>
               <div className="flex items-center justify-between mb-4 relative">
-                <h3 className="font-bold text-[var(--text-secondary)] tracking-tight">Districts Analyzed</h3>
+                <h3 className="font-bold text-[var(--text-secondary)] tracking-tight">Poverty Rate</h3>
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-[var(--accent)]"><Activity className="w-5 h-5" /></div>
               </div>
-              <p className="text-4xl font-black text-[var(--text-primary)] relative">{metrics ? Object.keys(metrics).length : 0}</p>
-              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">Powered by EICV7 Microdata</p>
+              <p className="text-4xl font-black text-[var(--text-primary)] relative">{metrics ? avgPoverty.toFixed(1) + '%' : '--%'}</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mt-2 relative">Measured EICV7, household-weighted</p>
             </div>
           </div>
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            2017, 2022, and 2024 on the chart are measured. The subsidy path after 2024 is a scenario.
+          </p>
+          </>
         )
       )}
 
@@ -441,6 +509,8 @@ function App() {
             if (impact) {
               displayMetrics[id] = {
                 ...originalData,
+                measured_biomass_reliance_rate: originalData.biomass_reliance_rate,
+                measured_clean_energy_rate: originalData.clean_energy_rate,
                 biomass_reliance_rate: impact.projected_biomass_rate,
                 clean_energy_rate: impact.projected_clean_rate,
               };
@@ -470,13 +540,17 @@ function App() {
               </div>
               {!isMapFullscreen && (
                 <div className="z-10 flex flex-col justify-stretch">
-                  <Simulator onSimulationComplete={handleUserSimulationComplete} />
+                  <Simulator onSimulationComplete={handleUserSimulationComplete} carbonPriceUsd={carbonPrice} />
                 </div>
               )}
             </div>
 
             {simulationResult && !isMapFullscreen && (
-              <SimulationResults result={simulationResult} />
+              <SimulationResults
+                result={simulationResult}
+                onCarbonPriceChange={handleCarbonPriceChange}
+                carbonUpdating={carbonUpdating}
+              />
             )}
 
             {!isMapFullscreen && (

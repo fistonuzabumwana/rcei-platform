@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 
 interface SimulatorProps {
   onSimulationComplete: (result: SimulationResult | null) => void
+  carbonPriceUsd?: number
 }
 
 export interface TargetPreset {
@@ -48,7 +49,7 @@ export const TARGET_PRESETS: Record<string, TargetPreset> = {
   }
 }
 
-export default function Simulator({ onSimulationComplete }: SimulatorProps) {
+export default function Simulator({ onSimulationComplete, carbonPriceUsd = 15 }: SimulatorProps) {
   const [subsidy, setSubsidy] = useState<number>(0)
   const [targetPreset, setTargetPreset] = useState<keyof typeof TARGET_PRESETS>('all')
   const [loading, setLoading] = useState(false)
@@ -62,7 +63,7 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
     setLoading(true)
     try {
       const targets = TARGET_PRESETS[presetKey].districts
-      const data = await simulateSubsidy(subVal, targets)
+      const data = await simulateSubsidy(subVal, targets, carbonPriceUsd)
       onSimulationComplete(data)
     } catch (err) {
       console.error('Simulation failed:', err)
@@ -91,7 +92,7 @@ export default function Simulator({ onSimulationComplete }: SimulatorProps) {
         </div>
         <div>
           <h2 className="text-xl md:text-2xl font-black text-[var(--text-primary)] tracking-tight">Policy Simulator</h2>
-          <p className="text-xs md:text-sm font-medium text-[var(--text-secondary)]">Simulate targeted LPG/Clean cooking interventions</p>
+          <p className="text-xs md:text-sm font-medium text-[var(--text-secondary)]">Scenario rule on measured district rates. Not a prediction from the fuel classifier.</p>
         </div>
       </div>
 
