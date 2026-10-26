@@ -237,7 +237,7 @@ export default function SimulationResults({ result, onCarbonPriceChange, carbonU
         {/* 2030 Forecast Chart */}
         <div className="lg:col-span-2">
           {result.forecast && result.forecast.length > 0 && (
-            <ForecastChart data={result.forecast} />
+            <ForecastChart data={result.forecast} slopes={result.forecast_slopes} />
           )}
         </div>
       </div>

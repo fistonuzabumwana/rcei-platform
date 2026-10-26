@@ -130,6 +130,46 @@ def test_model_info_endpoint():
     assert "observed" in data["target"]
     assert "does not predict subsidy" in data["methodology"].lower()
 
+def test_model_info_features_are_measured_eicv7_variables():
+    """Six measured features, each with a documented EICV7 source, and an honest three-flag baseline."""
+    data = client.get("/api/v1/model/info").json()
+    expected = {"is_urban", "is_poor", "is_extreme_poor", "is_grid_connected", "consumption_quintile", "minutes_to_food_market"}
+    assert set(data["features"]) == expected
+    assert set(data["feature_importances"]) == expected
+    assert set(data["feature_sources"]) == expected
+    assert pytest.approx(sum(data["feature_importances"].values()), abs=1e-3) == 1.0
+    assert data["roc_auc"] >= data["baseline_three_flag_model"]["roc_auc"]
+    tabs = data["measured_cross_tabs_weighted"]
+    assert tabs["clean_rate_grid_connected_pct"] > tabs["clean_rate_not_grid_connected_pct"]
+    assert tabs["clean_rate_by_quintile_pct"]["Q5"] > tabs["clean_rate_by_quintile_pct"]["Q1"]
+
+def test_bau_slope_is_measured_2017_2024_decline():
+    """Business-as-usual continues the measured EICV5 -> EICV7 national decline, not a hand-picked constant."""
+    data = client.post("/api/v1/simulate/subsidy", json={"subsidy_percentage": 40.0, "target_districts": []}).json()
+    forecast = {p["year"]: p for p in data["forecast"]}
+    measured_slope = (forecast[2017]["business_as_usual"] - forecast[2024]["business_as_usual"]) / 7.0
+    assert data["forecast_slopes"]["bau_annual_decline_pp"] == pytest.approx(measured_slope, abs=0.02)
+    assert data["forecast_slopes"]["bau_annual_decline_pp"] < 1.0
+    assert forecast[2030]["business_as_usual"] == pytest.approx(
+        forecast[2024]["business_as_usual"] - 6 * data["forecast_slopes"]["bau_annual_decline_pp"], abs=0.15
+    )
+    assert data["forecast_slopes"]["with_policy_annual_decline_pp"] == pytest.approx(
+        data["forecast_slopes"]["bau_annual_decline_pp"] + 0.4 * 1.5, abs=1e-6
+    )
+
+def test_district_rate_shift_matches_converted_households():
+    """Projected district rate drops by biomass_rate * shift, consistent with converted_households."""
+    baseline = client.get("/api/v1/metrics/districts").json()
+    data = client.post("/api/v1/simulate/subsidy", json={"subsidy_percentage": 40.0, "target_districts": []}).json()
+    for dist_id in ["11", "22", "52"]:
+        b = baseline[dist_id]
+        imp = data["district_impact"][dist_id]
+        biomass_hh = b["estimated_households"] * b["biomass_reliance_rate"] / 100.0
+        implied_shift = imp["converted_households"] / biomass_hh
+        expected_drop_pp = b["biomass_reliance_rate"] * implied_shift
+        assert b["biomass_reliance_rate"] - imp["projected_biomass_rate"] == pytest.approx(expected_drop_pp, abs=0.05)
+        assert imp["projected_clean_rate"] - b["clean_energy_rate"] == pytest.approx(expected_drop_pp, abs=0.05)
+
 def test_forecast_scenario_band():
     """Forecast band is ordered. It is a scenario band, not a confidence interval."""
     payload = {"subsidy_percentage": 40.0, "target_districts": []}

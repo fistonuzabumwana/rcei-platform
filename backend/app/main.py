@@ -35,11 +35,8 @@ DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "district_metrics.json")
 with open(DATA_PATH, "r") as f:
     DISTRICT_METRICS = json.load(f)
 
-# The subsidy path below still looks for the old regressor. This branch
-# replaces that file with an observed-fuel classifier, which is not called
-# inside simulate. Health reports the classifier as loaded.
-MODEL_PATH = os.path.join(BASE_DIR, "core", "adoption_model.pkl")
-adoption_model = None
+MODEL_PATH = os.path.join(BASE_DIR, "core", "fuel_choice_model.pkl")
+fuel_model = None
 if joblib is not None and os.path.exists(MODEL_PATH):
     try:
         fuel_model = joblib.load(MODEL_PATH)
@@ -47,16 +44,6 @@ if joblib is not None and os.path.exists(MODEL_PATH):
     except Exception as e:
         print(f"Warning: Could not load fuel-choice classifier: {e}")
 
-FUEL_MODEL_PATH = os.path.join(BASE_DIR, "core", "fuel_choice_model.pkl")
-fuel_model = None
-if joblib is not None and os.path.exists(FUEL_MODEL_PATH):
-    try:
-        fuel_model = joblib.load(FUEL_MODEL_PATH)
-        print("Fuel-choice classifier loaded.")
-    except Exception as e:
-        print(f"Warning: Could not load fuel-choice classifier: {e}")
-
-# Load model evaluation & validation metrics
 MODEL_METRICS_PATH = os.path.join(BASE_DIR, "core", "model_metrics.json")
 MODEL_METRICS = {}
 if os.path.exists(MODEL_METRICS_PATH):
@@ -71,11 +58,14 @@ KIT_COST_RWF = 50000.0
 BIOMASS_TONS_PER_HOUSEHOLD = 1.2
 TCO2E_PER_CHARCOAL_TON = 3.0
 RWF_PER_USD = 1300.0
+POLICY_MOMENTUM_PP_PER_SUBSIDY = 1.5  # extra percentage points per year at a 100% subsidy; an assumption
 FORECAST_NOTE = (
     "Years 2017 and 2022 are measured survey and census anchors. "
-    "Years from 2024, including with_policy_lower and with_policy_upper, "
-    "are a scenario band (margin = 0.5 + 0.6 * sqrt(years since 2024)), "
-    "not a 95% confidence interval."
+    "The business-as-usual slope after 2024 is the measured EICV5 (2017) to EICV7 (2024) "
+    "national decline in percentage points per year, held constant. "
+    "The with_policy slope adds subsidy/100 * 1.5 points per year, which is an assumption. "
+    "with_policy_lower and with_policy_upper are a scenario band "
+    "(margin = 0.5 + 0.6 * sqrt(years since 2024)), not a 95% confidence interval."
 )
 PROVENANCE = {
     "measured": [
@@ -83,6 +73,7 @@ PROVENANCE = {
         "household counts",
         "clean fuel rates by poverty group",
         "EICV5 2017 and Census 2022 anchors",
+        "business-as-usual slope: measured 2017 to 2024 national decline, held constant",
         "wood collection hours",
         "annual charcoal expenditure",
         "SAS cattle share and harvest kilograms",
@@ -97,7 +88,8 @@ PROVENANCE = {
         "bio-slurry = biogas households * 12 tonnes",
         "crop residue = weighted harvest tonnes * 1.15",
         "pellets = residue * 0.50",
-        "forecast decline 1.6 percentage points per year, plus subsidy/100 * 1.5 when a subsidy is applied",
+        "with_policy slope adds subsidy/100 * 1.5 percentage points per year to the measured slope",
+        "household count held at the EICV7 total through 2030",
         "scenario band margin 0.5 + 0.6 * sqrt(years since 2024)",
     ],
 }
@@ -128,7 +120,8 @@ def health_check():
     return {
         "status": "healthy",
         "service": "Rwanda CleanEnergy Insights API",
-        "model_loaded": fuel_model is not None or adoption_model is not None,
+        "model_loaded": fuel_model is not None,
+        "model_role": "observed_fuel_classifier",
         "districts_count": len(DISTRICT_METRICS),
         "data_sources": [
             "NISR EICV7 (2024) Household Survey Microdata",
@@ -192,9 +185,12 @@ def simulate_policy(req: SimulationRequest):
             annual_charcoal_saved_tons += charcoal_saved
             avoided_charcoal_expenditure_total_rwf += district_expenditure_saved
 
+            # The shift applies to biomass households only, so the rate moves by
+            # biomass_rate * shift percentage points. This matches converted_households.
+            rate_shift_pp = data["biomass_reliance_rate"] * shift_rate
             results[dist_id] = {
-                "projected_biomass_rate": max(0.0, data["biomass_reliance_rate"] - (shift_rate * 100)),
-                "projected_clean_rate": min(100.0, data["clean_energy_rate"] + (shift_rate * 100)),
+                "projected_biomass_rate": round(max(0.0, data["biomass_reliance_rate"] - rate_shift_pp), 2),
+                "projected_clean_rate": round(min(100.0, data["clean_energy_rate"] + rate_shift_pp), 2),
                 "converted_households": int(potential_conversions),
                 "charcoal_saved_tons": round(charcoal_saved, 1),
                 "charcoal_reliance_rate": data.get("charcoal_reliance_rate", 0.0),
@@ -262,9 +258,12 @@ def simulate_policy(req: SimulationRequest):
         bioeconomy["targeted_pellet_potential_tons"] = round(_sum_field(scoped, "pellet_potential_tons"), 0)
 
     # Scenario path. 2017 and 2022 points below are the measured anchors.
-    # The 1.6 point annual decline is an assumption, not the district-level empirical rate.
-    annual_organic_drop = 1.6
-    annual_policy_momentum = 1.6 + (req.subsidy_percentage / 100.0) * 1.5 if req.subsidy_percentage > 0 else 1.6
+    # Business-as-usual continues the measured 2017 -> 2024 national decline (about 0.56 points per year).
+    # The extra policy momentum per subsidy point is an assumption.
+    annual_organic_drop = max(0.0, (eicv5_2017_national_rate - current_national_biomass_rate) / 7.0)
+    annual_policy_momentum = annual_organic_drop + (
+        (req.subsidy_percentage / 100.0) * POLICY_MOMENTUM_PP_PER_SUBSIDY if req.subsidy_percentage > 0 else 0.0
+    )
 
     forecast = [
         {
@@ -321,6 +320,12 @@ def simulate_policy(req: SimulationRequest):
         "bioeconomy": bioeconomy,
         "district_impact": results,
         "forecast": forecast,
+        "forecast_slopes": {
+            "bau_annual_decline_pp": round(annual_organic_drop, 3),
+            "bau_source": "measured EICV5 (2017) to EICV7 (2024) national decline, divided by 7",
+            "with_policy_annual_decline_pp": round(annual_policy_momentum, 3),
+            "policy_momentum_rule": "bau + subsidy/100 * 1.5 (assumption)",
+        },
         "forecast_note": FORECAST_NOTE,
         "provenance": PROVENANCE,
     }

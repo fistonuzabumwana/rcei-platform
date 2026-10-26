@@ -16,10 +16,19 @@ This document provides the exhaustive specification for all survey variables ing
 | `hhid` | String / Long | Unique Household Identifier | Unique cluster-household key |
 | `district` | Integer | Administrative District Code | `11` (Nyarugenge) to `57` (Kirehe) |
 | `ur` | Byte | Urban / Rural Location | `1` = Urban, `2` = Rural |
-| `s5cq22a` | Byte | Primary Cooking Fuel | `1` = Firewood (Traditional Biomass)<br>`2` = Charcoal (Traditional Biomass)<br>`3` = Gas / LPG (Clean Energy)<br>`4` = Biogas (Clean Energy)<br>`5` = Electricity (Clean Energy)<br>`6` = Kerosene<br>`13` = Crop Residues / Peat |
+| `s5cq22a` | Byte | Primary Cooking Fuel | Biomass (as coded in `clean_eicv.py`): `1` Firewood, `2` Charcoal, `4` Peat, `8` Crop waste, `12` Sawdust, `13` Straw / grass<br>Clean: `3` Gas / LPG, `6` Biogas, `7` Oil / kerosene, `10` Briquette, `11` Electricity<br>Kerosene is not WHO-clean; it is 0.006% of weighted households and does not move any rate. |
 | `pov_jan` | Byte | Household Poverty Classification | `0` = Non-poor<br>`1` = Poor (includes extreme poor) |
 | `epov_jan` | Byte | Extreme Poverty Binary Indicator | `0` = Non-extreme poor<br>`1` = Extremely poor |
 | `weight` | Double | Household Expansion Weight | Normalized sample expansion multiplier |
+| `s5cq14` | Byte | Electricity connection | `1` = Grid, `2` = Solar only, `3` = Grid and solar, `4` = None. Classifier feature `is_grid_connected` = `1` or `3`. |
+| `quintile` | Byte | Quintile of real consumption per adult equivalent | `1` (lowest) to `5` (highest). Classifier feature `consumption_quintile`. |
+
+**Source File:** `dataset/IECV7/Microdata/Cross_Section/CS_S5F_access_to_services.dta` (one row per household per service)
+
+| Variable | Stata Type | Label / Description | Domain Values & Interpretation |
+| :--- | :--- | :--- | :--- |
+| `s5fq0` | Byte | Basic service id | `2` = Food market / shop is the row used |
+| `s5fq3a`, `s5fq3b` | Float | Travel time to the service (hours, minutes) | Classifier feature `minutes_to_food_market` = `s5fq3a × 60 + s5fq3b`; 1,026 households without a time are filled with the 40-minute median |
 
 ---
 
@@ -41,8 +50,8 @@ This document provides the exhaustive specification for all survey variables ing
 ---
 
 ### 1.3 5th National Census (RPHC-2022) & EICV5 (2017) Anchors
-- **RPHC-2022:** 100% complete national census enumeration establishing district-level ground-truth biomass vs. clean energy rates.
-- **EICV5 (2017):** 7-year historical longitudinal baseline (`EICV5_Household.dta`) used to calculate empirical compound annual reduction rates (CAGR).
+- **RPHC-2022:** Public-use census microdata sample (`PHC5_Public_microdata.dta`, 331,917 household-head rows with `p02 == 1`), not the full enumeration. Cooking fuel `h16`, district `ml02`, unweighted district means. 2022 anchor on the chart.
+- **EICV5 (2017):** 7-year anchor (`cs_S0_S5_Household.dta`, 14,580 households, `s5cq18`, weighted). The measured 2017 to 2024 national decline is the business-as-usual slope in the forecast.
 
 ---
 

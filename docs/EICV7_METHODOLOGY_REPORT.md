@@ -29,8 +29,8 @@ The platform addresses the NST2 clean-cooking priority: household biomass relian
 │ 1. NISR EICV7 (2024)     │ CS_S01_S5_S7_Household   │ Primary cooking fuels, poverty    │
 │    Household Microdata   │ (14,000+ HHs, 3.3M exp.) │ headcounts, urban/rural weights   │
 ├──────────────────────────┼──────────────────────────┼───────────────────────────────────┤
-│ 2. 5th National Census   │ RPHC-2022 District       │ 100% complete enumeration ground  │
-│    (RPHC-2022)           │ Enumeration Records      │ truth calibration (2-year shift)  │
+│ 2. 5th National Census   │ PHC5_Public_microdata    │ 2022 cooking-fuel anchor from the │
+│    (RPHC-2022)           │ (331,917 HH-head rows)   │ public-use sample (2-year shift)  │
 ├──────────────────────────┼──────────────────────────┼───────────────────────────────────┤
 │ 3. NISR EICV5 (2017)     │ EICV5_Household.dta      │ 7-year longitudinal baseline for  │
 │    Household Microdata   │ (14,000+ HHs)            │ empirical compound annual drop    │
@@ -52,9 +52,9 @@ $$\hat{N}_d = \sum_{i \in d} w_i$$
 Where $\hat{N}_d$ represents the total estimated private households in district $d$.
 
 ### 2.2 Census 2022 Calibration & EICV5 Longitudinal Anchors
-- **RPHC-2022 Baseline:** Complete national enumeration establishes ground-truth district cooking fuel profiles (national biomass reliance: 94.86%). The 2-year shift between 2022 Census and 2024 EICV7 establishes the recent annualized transition velocity:
+- **RPHC-2022 Anchor:** The 2022 point comes from the NISR public-use census microdata file (`PHC5_Public_microdata.dta`), not the full enumeration. The pipeline keeps household-head rows (`p02 == 1`, 331,917 households), classifies `h16`, and takes an unweighted district mean. The household-weighted national figure is **94.84%** biomass. The 2-year shift to EICV7 is reported per district:
   $$\text{Decline}_{\text{2-yr}} = \frac{\text{Biomass}_{\text{Census2022}} - \text{Biomass}_{\text{EICV7}}}{2.0}$$
-- **EICV5 (2017) Trajectory:** Provides a 7-year historical trajectory (national biomass: 97.92%) used to calculate empirical compound annual reduction rates (CAGR) and longitudinal standard error bounds.
+- **EICV5 (2017) Anchor:** Household-weighted national biomass **97.88%**, clean **1.22%** (14,580 sampled households). The measured 2017 to 2024 national decline, \((97.88 - 93.95) / 7 \approx 0.56\) percentage points per year, is the business-as-usual slope used in the forecast (section 6).
 
 ---
 
@@ -63,10 +63,13 @@ Where $\hat{N}_d$ represents the total estimated private households in district 
 ### 3.1 Data Dictionary
 | Variable Name | Survey Product | Description & Categories | Role in Platform |
 | :--- | :--- | :--- | :--- |
-| `s5cq22a` | EICV7 | Primary cooking fuel. Biomass in this build: `1` firewood, `2` charcoal, `4` peat, `8` crop waste, `12` sawdust, `13` straw/grass. Clean: `3` gas, `6` biogas, `7` oil/kerosene, `10` briquette, `11` electricity. | Measured fuel outcome and classifier target |
+| `s5cq22a` | EICV7 | Primary cooking fuel. Biomass in this build: `1` firewood, `2` charcoal, `4` peat, `8` crop waste, `12` sawdust, `13` straw/grass. Clean: `3` gas, `6` biogas, `7` oil/kerosene, `10` briquette, `11` electricity. Kerosene is not WHO-clean; it is 0.006% of weighted households, so including it does not change any reported rate. | Measured fuel outcome and classifier target |
 | `pov_jan` | EICV7 | `0` non-poor, `1` poor (includes extreme poor) | Poverty headcount. Poor means `pov_jan == 1`, not `>= 2`. |
 | `epov_jan` | EICV7 | Extreme poverty classification (`0`: No, `1`: Yes) | Liquidity constraint isolation |
 | `ur` | EICV7 | Geographic location (`1`: Urban, `2`: Rural) | Depot proximity & distribution feasibility |
+| `s5cq14` | EICV7 | Electricity connection (`1` grid, `2` solar only, `3` grid and solar, `4` none) | Classifier feature `is_grid_connected` |
+| `quintile` | EICV7 | Quintile of real consumption per adult equivalent (`1` to `5`) | Classifier feature `consumption_quintile` |
+| `s5fq0`, `s5fq3a`, `s5fq3b` | EICV7 access-to-services | Service id (`2` = food market / shop), travel time in hours and minutes | Classifier feature `minutes_to_food_market` |
 | `district` | All surveys | Administrative District Code (`11` to `57`) | Geospatial choropleth mapping |
 | `weight` | EICV7 / SAS | Normalized expansion factor | Population-weighted statistical projection |
 | `s9q2`, `s9q4` | SAS 2024 | Livestock species and count per farm | Smallholder cattle threshold ($\ge 2$ head) |
@@ -107,16 +110,33 @@ By integrating plot-level livestock and crop production microdata from the **Agr
 ## 5. Observed-fuel classifier and a separate subsidy scenario
 
 ### 5.1 Classifier
-`backend/pipeline/train_model.py` trains a `RandomForestClassifier` (`class_weight="balanced"`, 100 trees, `max_depth=10`, `random_state=42`) on observed `s5cq22a`. The positive class is clean fuel (codes 3, 10, 6, 11, 7). Features are `is_urban`, moderate `is_poor`, and `is_extreme_poor`. There is no synthetic price or willingness-to-pay label.
+`backend/pipeline/train_model.py` trains a `RandomForestClassifier` (`class_weight="balanced"`, 200 trees, `max_depth=10`, `min_samples_leaf=5`, `random_state=42`) on observed `s5cq22a`. The positive class is clean fuel (codes 3, 10, 6, 11, 7). There is no synthetic price or willingness-to-pay label.
 
-From `backend/app/core/model_metrics.json`:
+Six features, all measured EICV7 household variables:
 
-- Sample size: **14,966** households (held-out test size 2,994)
-- Unweighted clean-fuel base rate: **5.12%**
-- Test ROC-AUC: **0.8759**
-- Balanced accuracy: **0.8677**
-- 5-fold CV ROC-AUC: **0.8634 (± 0.0141)**
-- Feature importance: `is_urban` **80.3%**, `is_poor` **16.3%**, `is_extreme_poor` **3.3%**
+| Feature | Source | Definition |
+| :--- | :--- | :--- |
+| `is_urban` | Household file `ur` | `ur == 1` |
+| `is_poor` | Household file `pov_jan`, `epov_jan` | moderate poor: `pov_jan == 1` and `epov_jan == 0` |
+| `is_extreme_poor` | Household file `epov_jan` | `epov_jan == 1` |
+| `is_grid_connected` | Household file `s5cq14` | `1` grid or `3` grid and solar |
+| `consumption_quintile` | Household file `quintile` | real consumption per adult equivalent, 1 (lowest) to 5 |
+| `minutes_to_food_market` | `CS_S5F_access_to_services.dta`, service `s5fq0 == 2` | `s5fq3a × 60 + s5fq3b`; 1,026 households without a recorded time are filled with the 40-minute sample median |
+
+Grid connection and market distance are infrastructure features, not fuel variables, so they do not leak the target. Stove type (`s5cq21`) was deliberately excluded because it is close to a restatement of the fuel.
+
+From `backend/app/core/model_metrics.json` (stratified 80/20 split, `random_state=42`):
+
+| Metric | Three flags only | Six features |
+| :--- | :---: | :---: |
+| Test ROC-AUC | 0.8759 | **0.9452** |
+| Balanced accuracy | 0.8677 | **0.8856** |
+| 5-fold CV ROC-AUC | 0.8634 | **0.9368 (± 0.0117)** |
+
+- Sample size: **14,966** households (held-out test size 2,994), unweighted clean-fuel base rate **5.12%**
+- Feature importance: `consumption_quintile` **49.5%**, `is_urban` **25.0%**, `is_grid_connected` **14.6%**, `minutes_to_food_market` **8.0%**, `is_poor` **2.5%**, `is_extreme_poor` **0.3%**
+
+The measured, household-weighted cross-tabs behind those importances: clean fuel is **10.65%** among grid-connected households and **0.12%** among the rest; by consumption quintile it is Q1 **0.00%**, Q2 **0.11%**, Q3 **0.41%**, Q4 **1.29%**, Q5 **22.26%**. Clean cooking in Rwanda today is a top-quintile, grid-connected phenomenon.
 
 The classifier does not predict subsidy response. Raw accuracy is not the headline, because most households already use biomass.
 
@@ -133,13 +153,17 @@ Weighted clean-fuel rates by poverty, from the same household file: non-poor **7
 
 ## 6. Forecast scenario band
 
-2017 and 2022 on the chart are the household-weighted EICV5 and census biomass rates (about **97.9%** and **94.8%**). From 2024 the path is an assumption, not a confidence interval:
+2017, 2022 and 2024 on the chart are the household-weighted EICV5, census and EICV7 biomass rates (**97.9%**, **94.8%**, **94.0%**). Business as usual continues the measured 2017 to 2024 slope:
 
-$$\text{Biomass}_{\text{BAU}}(t) = \text{Biomass}(2024) - (t - 2024) \times 1.6$$
+$$m = \frac{\text{Biomass}(2017) - \text{Biomass}(2024)}{7} \approx 0.56 \text{ points per year}$$
 
-$$\text{Biomass}_{\text{Policy}}(t) = \text{Biomass}_{\text{after subsidy}}(2024) - (t - 2024) \times \left(1.6 + \frac{S}{100} \times 1.5\right)$$
+$$\text{Biomass}_{\text{BAU}}(t) = \text{Biomass}(2024) - (t - 2024) \times m$$
 
-The shaded band is \(\pm (0.5 + 0.6 \sqrt{t - 2024})\) percentage points. The 2024 business-as-usual point from the API is **94.0%**, which matches the weighted EICV7 biomass rate.
+$$\text{Biomass}_{\text{Policy}}(t) = \text{Biomass}_{\text{after subsidy}}(2024) - (t - 2024) \times \left(m + \frac{S}{100} \times 1.5\right)$$
+
+The slope \(m\) is measured. The extra 1.5 points per year at a 100% subsidy, the one-time 2024 step from the shift rule, and the constant household count are assumptions. The API returns both slopes in `forecast_slopes`. The shaded band is \(\pm (0.5 + 0.6 \sqrt{t - 2024})\) percentage points and is not a confidence interval.
+
+Under this path, business as usual reaches about **90.6%** biomass in 2030, a 40% national subsidy about **76.8%**, and a 70% subsidy about **66.4%**. None of the subsidy-only scenarios reaches the NST2 target of under 50%. That is a finding of the tool: a kit subsidy on its own, at the measured pace of change, does not close the gap, so supply-side measures (LPG distribution, electricity tariffs, biogas programmes) have to carry the rest.
 
 ---
 

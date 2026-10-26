@@ -9,7 +9,7 @@ The measured baseline is the household-weighted EICV7 result in `backend/app/dat
 - **23.37%** are poor
 - **3,289,805** households
 
-Census 2022 biomass is **94.84%**. EICV5 (2017) biomass is **97.88%**. NST2's goal is biomass under **50%** by 2029/30, on the way to Vision 2050. The 2017, 2022, and 2024 points are measured. Anything the subsidy slider adds after that is a scenario.
+Census 2022 biomass is **94.84%** (public-use census sample). EICV5 (2017) biomass is **97.88%**. NST2's goal is biomass under **50%** by 2029/30, on the way to Vision 2050. The 2017, 2022, and 2024 points are measured. Business as usual continues the measured 2017–2024 decline of **0.56 points per year**, which lands at about **90.6%** in 2030. Anything the subsidy slider adds on top of that is a scenario, and no subsidy-only scenario reaches 50%.
 
 Clean fuel is almost entirely among non-poor households: **7.06%** clean for non-poor, **0.04%** for moderate poor, and **0.00%** for extreme poor (weighted).
 
@@ -42,28 +42,43 @@ A national 40% scenario at $15 converts **336,331** households, displaces **74,4
 | Source | Role |
 | :--- | :--- |
 | EICV7 `CS_S01_S5_S7_Household.dta` | Weighted fuel, poverty, household counts, clean fuel by poverty |
+| EICV7 household file `s5cq14`, `quintile` | Grid connection and consumption quintile (classifier features) |
+| EICV7 `CS_S5F_access_to_services.dta` `s5fq3a`/`s5fq3b` | Minutes to the nearest food market (classifier feature) |
 | EICV7 person file `s6cq4` | Wood-collection hours |
 | EICV7 expenditure file, charcoal cooking | Annual charcoal spend |
-| RPHC-2022 `h16` | 2022 cooking-fuel anchor |
+| RPHC-2022 public-use microdata `h16` (household-head rows) | 2022 cooking-fuel anchor |
 | EICV5 `s5cq18` | 2017 cooking-fuel anchor |
 | SAS 2024 livestock `s9q2` / `s9q4` | Households with at least 2 cattle |
 | SAS 2024 `s3_q20_1`–`s3_q20_7` | Plot harvest kilograms |
 
-Raw `.dta` files live in `dataset/`, which is gitignored. The committed artifact is `district_metrics.json`. Regenerate it with `python backend/pipeline/clean_eicv.py`.
+### Getting the microdata
 
-Fuel codes used in code: biomass `1, 2, 4, 8, 12, 13`; clean `3, 6, 7, 10, 11`. Poverty is `pov_jan == 1`. Extreme poverty is `epov_jan == 1`.
+The raw `.dta` files are NISR-licensed and are not redistributed in this repository (`dataset/` is gitignored). The committed, inspectable artifact is `backend/app/data/processed/district_metrics.json`, and the API serves only that file. To re-run the pipeline, request the datasets from the [NISR Microdata Catalog](https://microdata.statistics.gov.rw/) and place them at these paths:
+
+| Dataset | Expected path |
+| :--- | :--- |
+| EICV7 (2023/24) cross-section | `dataset/IECV7/Microdata/Cross_Section/CS_S01_S5_S7_Household.dta`, `CS_S0_S1_S2_S3_S4_S6A_S6B_S6C_Person.dta`, `CS_S8A3_Expenditure.dta`, `CS_S5F_access_to_services.dta` |
+| RPHC-2022 public-use microdata | `dataset/RPHC-2022/PHC5_Public_microdata/PHC5_Public_microdata.dta` |
+| EICV5 (2016/17) Stata release | `dataset/EICV5/EICV5-data_STATA/cs_S0_S5_Household.dta` |
+| Agricultural Household Survey 2024 | `dataset/Agricultural Survey (SAS) 2024/Microdata/AHS2024_Section0.dta`, `AHS2024_Section9_10_12_LIVESTOCK AND ANIMAL INPUTS EXPENDITURES,.dta`, `AHS2024_Section3_4_CROP GROWN, SEEDS AND PRODUCTION & AGRICULTURAL INPUTS AND PRACTICES.dta` |
+
+Then run `python backend/pipeline/clean_eicv.py` to rebuild `district_metrics.json` and `python backend/pipeline/train_model.py` to rebuild the classifier and `model_metrics.json`.
+
+Fuel codes used in code: biomass `1, 2, 4, 8, 12, 13`; clean `3, 6, 7, 10, 11`. Kerosene (`7`) is counted as clean for continuity with the survey grouping; it is not WHO-clean, but it is 0.006% of weighted households and does not change any reported rate. Poverty is `pov_jan == 1`. Extreme poverty is `epov_jan == 1`.
 
 ## Classifier
 
-`backend/pipeline/train_model.py` fits a balanced `RandomForestClassifier` on observed `s5cq22a`. Features are urban/rural, moderate poverty, and extreme poverty. It does not take a price and it does not run inside the subsidy endpoint.
+`backend/pipeline/train_model.py` fits a balanced `RandomForestClassifier` on observed `s5cq22a`. Six measured EICV7 features: urban/rural (`ur`), moderate poverty (`pov_jan`), extreme poverty (`epov_jan`), grid connection (`s5cq14`), consumption quintile (`quintile`), and minutes to the nearest food market (`s5fq3a`/`s5fq3b` from `CS_S5F_access_to_services.dta`, 1,026 missing filled with the 40-minute median). It does not take a price and it does not run inside the subsidy endpoint.
 
 From `backend/app/core/model_metrics.json`:
 
 - Sample: **14,966** (clean-fuel base rate **5.12%**, unweighted)
-- Test ROC-AUC: **0.8759**
-- Balanced accuracy: **0.8677**
-- 5-fold CV ROC-AUC: **0.8634 (± 0.0141)**
-- Importance: urban **80.3%**, moderate poor **16.3%**, extreme poor **3.3%**
+- Test ROC-AUC: **0.9452** (three-flag baseline on the same split: 0.8759)
+- Balanced accuracy: **0.8856**
+- 5-fold CV ROC-AUC: **0.9368 (± 0.0117)**
+- Importance: consumption quintile **49.5%**, urban **25.0%**, grid connection **14.6%**, market minutes **8.0%**, moderate poor **2.5%**, extreme poor **0.3%**
+
+The measured cross-tabs behind those features (household-weighted): clean fuel is **10.65%** among grid-connected households and **0.12%** among the rest; by consumption quintile it is Q1 **0.0%**, Q2 **0.1%**, Q3 **0.4%**, Q4 **1.3%**, Q5 **22.3%**.
 
 ## API
 
@@ -74,7 +89,7 @@ From `backend/app/core/model_metrics.json`:
 | GET | `/api/v1/model/info` | Classifier metrics |
 | POST | `/api/v1/simulate/subsidy` | Scenario. Body: `subsidy_percentage` (0–100), `target_districts`, optional `carbon_price_usd` (0–100, default 15) |
 
-Out-of-range subsidy or carbon price returns 422. The response includes `provenance` (measured versus assumption) and `forecast_note`. The forecast band is a scenario band, not a 95% confidence interval.
+Out-of-range subsidy or carbon price returns 422. The response includes `provenance` (measured versus assumption), `forecast_slopes` (the measured business-as-usual slope and the assumed policy slope), and `forecast_note`. The forecast band is a scenario band, not a 95% confidence interval.
 
 ```json
 {

@@ -15,7 +15,7 @@ The RCEI backend is an asynchronous, high-performance API service built with **F
 | Endpoint | Method | Description | Cache / Warmup |
 | :--- | :---: | :--- | :---: |
 | `/health` or `/api/v1/health` | `GET` | Health status, model state, and data sources (used for zero-cold-start warmups). | Live / No cache |
-| `/api/v1/metrics/districts` | `GET` | Complete 30-district baseline indicators fused from EICV7, Census 2022, EICV5, and SAS 2024. | In-Memory JSON |
+| `/api/v1/metrics/districts` | `GET` | Complete 30-district baseline indicators fused from EICV7, the public-use Census 2022 sample, EICV5, and SAS 2024. | In-Memory JSON |
 | `/api/v1/model/info` | `GET` | Observed-fuel classifier metrics (ROC-AUC, balanced accuracy, base rate, feature importances). | Static JSON |
 | `/api/v1/simulate/subsidy` | `POST` | Applies the disclosed subsidy scenario. Does not call the classifier. Subsidy must be 0–100. | Computed |
 
@@ -94,17 +94,29 @@ Returns the observed-fuel classifier. It does not predict subsidy response.
   "target": "observed_eicv7_primary_cooking_fuel",
   "sample_size": 14966,
   "clean_fuel_base_rate": 0.0512,
-  "roc_auc": 0.8759,
-  "balanced_accuracy": 0.8677,
-  "cv_roc_auc_mean": 0.8634,
+  "roc_auc": 0.9452,
+  "balanced_accuracy": 0.8856,
+  "cv_roc_auc_mean": 0.9368,
+  "features": ["is_urban", "is_poor", "is_extreme_poor", "is_grid_connected", "consumption_quintile", "minutes_to_food_market"],
   "feature_importances": {
-    "is_urban": 0.8033,
-    "is_poor": 0.1634,
-    "is_extreme_poor": 0.0332
+    "is_urban": 0.2502,
+    "is_poor": 0.0253,
+    "is_extreme_poor": 0.0031,
+    "is_grid_connected": 0.1462,
+    "consumption_quintile": 0.4948,
+    "minutes_to_food_market": 0.0804
+  },
+  "baseline_three_flag_model": { "features": ["is_urban", "is_poor", "is_extreme_poor"], "roc_auc": 0.8759, "balanced_accuracy": 0.8677, "cv_roc_auc_mean": 0.8634 },
+  "measured_cross_tabs_weighted": {
+    "clean_rate_grid_connected_pct": 10.65,
+    "clean_rate_not_grid_connected_pct": 0.12,
+    "clean_rate_by_quintile_pct": { "Q1": 0.0, "Q2": 0.11, "Q3": 0.41, "Q4": 1.29, "Q5": 22.26 }
   },
   "methodology": "Predicts observed EICV7 primary cooking fuel; it does not predict subsidy response."
 }
 ```
+
+The response also carries `feature_sources` (the exact EICV7 variable behind each feature) and `citations`.
 
 ---
 
@@ -177,10 +189,26 @@ The shift rule is `min((subsidy/10) * (0.02 + poverty_rate/100 * 0.03), 1)`. It 
       "with_policy_lower": 83.2,
       "with_policy_upper": 84.2,
       "is_historical": false
+    },
+    {
+      "year": 2030,
+      "business_as_usual": 90.6,
+      "with_policy": 76.8,
+      "with_policy_lower": 74.8,
+      "with_policy_upper": 78.8,
+      "is_historical": false
     }
-  ]
+  ],
+  "forecast_slopes": {
+    "bau_annual_decline_pp": 0.562,
+    "bau_source": "measured EICV5 (2017) to EICV7 (2024) national decline, divided by 7",
+    "with_policy_annual_decline_pp": 1.162,
+    "policy_momentum_rule": "bau + subsidy/100 * 1.5 (assumption)"
+  }
 }
 ```
+
+`district_impact[*].projected_biomass_rate` drops by `biomass_reliance_rate × shift` percentage points, which is consistent with `converted_households` (the shift applies to biomass households only). The business-as-usual slope is measured; the policy momentum term is an assumption.
 
 ---
 
