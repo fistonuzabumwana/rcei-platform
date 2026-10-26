@@ -1,24 +1,26 @@
 {
-  "model_type": "RandomForestRegressor",
+  "model_type": "RandomForestClassifier",
+  "target": "observed_eicv7_primary_cooking_fuel",
+  "target_definition": "is_clean = 1 when s5cq22a is gas, briquette, biogas, electricity, or oil/kerosene",
+  "positive_class": "clean_fuel",
   "n_estimators": 100,
   "max_depth": 10,
-  "sample_size": 70960,
-  "test_rmse": 0.0486,
-  "test_mae": 0.0332,
-  "test_r2": 0.9767,
-  "cv_r2_mean": 0.9759,
-  "cv_r2_std": 0.0006,
+  "class_weight": "balanced",
+  "sample_size": 14966,
+  "test_size": 2994,
+  "clean_fuel_base_rate": 0.0512,
+  "roc_auc": 0.8759,
+  "balanced_accuracy": 0.8677,
+  "cv_roc_auc_mean": 0.8634,
+  "cv_roc_auc_std": 0.0141,
   "feature_importances": {
-    "is_urban": 0.1274,
-    "is_poor": 0.0335,
-    "is_extreme_poor": 0.0275,
-    "lpg_kit_price": 0.8116
+    "is_urban": 0.8033,
+    "is_poor": 0.1634,
+    "is_extreme_poor": 0.0332
   },
-  "methodology": "Behaviorally-calibrated econometric simulation combining EICV7 household microdata with ESMAP/World Bank willingness-to-pay elasticity parameters.",
+  "methodology": "Predicts observed EICV7 primary cooking fuel; it does not predict subsidy response.",
+  "subsidy_scenario": "The subsidy slider uses a separate disclosed shift rule and is not an output of this classifier.",
   "citations": [
-    "NISR EICV7 (2024) Household Survey Microdata",
-    "NISR 5th Population and Housing Census (RPHC-2022)",
-    "World Bank ESMAP (2023) Clean Cooking Fund Price Elasticity Framework",
-    "WHO (2022) Clean Household Energy Solutions Toolkit (CHEST)"
+    "NISR EICV7 (2024) Household Survey Microdata, variable s5cq22a"
   ]
 }

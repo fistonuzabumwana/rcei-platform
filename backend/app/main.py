@@ -36,7 +36,9 @@ DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "district_metrics.json")
 with open(DATA_PATH, "r") as f:
     DISTRICT_METRICS = json.load(f)
 
-# Load the trained Machine Learning model
+# The subsidy path below still looks for the old regressor. This branch
+# replaces that file with an observed-fuel classifier, which is not called
+# inside simulate. Health reports the classifier as loaded.
 MODEL_PATH = os.path.join(BASE_DIR, "core", "adoption_model.pkl")
 adoption_model = None
 if joblib is not None and os.path.exists(MODEL_PATH):
@@ -45,6 +47,15 @@ if joblib is not None and os.path.exists(MODEL_PATH):
         print("Machine Learning model loaded successfully!")
     except Exception as e:
         print(f"Warning: Could not load ML model: {e}")
+
+FUEL_MODEL_PATH = os.path.join(BASE_DIR, "core", "fuel_choice_model.pkl")
+fuel_model = None
+if joblib is not None and os.path.exists(FUEL_MODEL_PATH):
+    try:
+        fuel_model = joblib.load(FUEL_MODEL_PATH)
+        print("Fuel-choice classifier loaded.")
+    except Exception as e:
+        print(f"Warning: Could not load fuel-choice classifier: {e}")
 
 # Load model evaluation & validation metrics
 MODEL_METRICS_PATH = os.path.join(BASE_DIR, "core", "model_metrics.json")
@@ -68,7 +79,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "Rwanda CleanEnergy Insights API",
-        "model_loaded": adoption_model is not None,
+        "model_loaded": fuel_model is not None or adoption_model is not None,
         "districts_count": len(DISTRICT_METRICS),
         "data_sources": [
             "NISR EICV7 (2024) Household Survey Microdata",
