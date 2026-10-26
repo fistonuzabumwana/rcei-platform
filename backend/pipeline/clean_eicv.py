@@ -222,6 +222,24 @@ def process_eicv():
         charcoal_rate = (group['is_charcoal'] * group[weight_col]).sum() / total_weight * 100
         firewood_rate = (group['is_firewood'] * group[weight_col]).sum() / total_weight * 100
 
+        # Measured clean-fuel rate by poverty group (weights). Extreme poor are a subset of pov_jan == 1.
+        non_poor_mask = group['is_poor'] == 0
+        extreme_mask = group['is_extreme_poor'] == 1
+        moderate_mask = (group['is_poor'] == 1) & (group['is_extreme_poor'] == 0)
+
+        def _group_clean(mask):
+            weights = group.loc[mask, weight_col]
+            weight_sum = float(weights.sum())
+            households = int(round(weight_sum))
+            if weight_sum <= 0:
+                return 0.0, households
+            rate = float((group.loc[mask, 'is_clean'] * weights).sum() / weight_sum * 100)
+            return round(rate, 2), households
+
+        clean_non_poor, hh_non_poor = _group_clean(non_poor_mask)
+        clean_moderate, hh_moderate = _group_clean(moderate_mask)
+        clean_extreme, hh_extreme = _group_clean(extreme_mask)
+
         estimated_households = int(total_weight)
         
         try:
@@ -237,6 +255,12 @@ def process_eicv():
             "poverty_rate": round(float(poverty_rate), 2),
             "extreme_poverty_rate": round(float(extreme_poverty_rate), 2),
             "estimated_households": estimated_households,
+            "clean_rate_non_poor": clean_non_poor,
+            "clean_rate_moderate_poor": clean_moderate,
+            "clean_rate_extreme_poor": clean_extreme,
+            "households_non_poor": hh_non_poor,
+            "households_moderate_poor": hh_moderate,
+            "households_extreme_poor": hh_extreme,
             "transition_priority_score": round(float((biomass_rate * 0.5) + (poverty_rate * 0.5)), 1),
             "wood_collection_hours_week": eicv7_time_metrics.get(dist_id_int, 6.1),
             "annual_charcoal_expenditure_rwf": eicv7_exp_metrics.get(dist_id_int, 135000.0)
