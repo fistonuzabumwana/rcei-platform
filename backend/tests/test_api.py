@@ -18,6 +18,8 @@ def test_get_all_districts():
     assert "clean_energy_rate" in data[sample_id]
     assert "poverty_rate" in data[sample_id]
     assert "estimated_households" in data[sample_id]
+    assert "clean_rate_non_poor" in data[sample_id]
+    assert "households_non_poor" in data[sample_id]
     assert data[sample_id]["biomass_reliance_rate"] > 80.0
 
 def test_simulate_subsidy_zero():
@@ -53,8 +55,12 @@ def test_simulate_subsidy_active_national():
     assert data["forecast"][2]["year"] == 2024
     assert data["forecast"][-1]["year"] == 2030
     assert "bioeconomy" in data
+    assert data["bioeconomy"]["bioeconomy_scope"] == "national_baseline"
     assert data["bioeconomy"]["national_biogas_viable_households"] > 0
     assert data["bioeconomy"]["national_crop_residue_feedstock_tons"] > 0
+    assert "provenance" in data
+    assert "forecast_note" in data
+    assert "measured" in data["forecast_note"].lower() or "scenario" in data["forecast_note"].lower()
 
 def test_simulate_targeted_districts():
     """Verify targeted policy cluster (Top 3 districts) isolates impact correctly."""
@@ -74,6 +80,25 @@ def test_simulate_targeted_districts():
     non_target = data["district_impact"]["12"]
     assert non_target["converted_households"] == 0
     assert non_target["charcoal_saved_tons"] == 0.0
+    assert data["bioeconomy"]["targeted_biogas_viable_households"] >= 0
+    assert data["bioeconomy"]["targeted_biogas_viable_households"] < data["bioeconomy"]["national_biogas_viable_households"]
+
+def test_subsidy_out_of_range():
+    """Subsidy outside 0-100 is rejected."""
+    response = client.post("/api/v1/simulate/subsidy", json={"subsidy_percentage": 150, "target_districts": []})
+    assert response.status_code == 422
+
+def test_carbon_price_changes_revenue():
+    """A higher carbon price raises revenue for the same charcoal displacement."""
+    low = client.post("/api/v1/simulate/subsidy", json={"subsidy_percentage": 40, "carbon_price_usd": 10, "target_districts": []})
+    high = client.post("/api/v1/simulate/subsidy", json={"subsidy_percentage": 40, "carbon_price_usd": 25, "target_districts": []})
+    assert low.status_code == 200 and high.status_code == 200
+    low_data = low.json()
+    high_data = high.json()
+    assert low_data["carbon_price_usd"] == 10
+    assert high_data["carbon_price_usd"] == 25
+    assert high_data["total_annual_charcoal_saved_tons"] == low_data["total_annual_charcoal_saved_tons"]
+    assert high_data["carbon_credit_revenue_rwf"] > low_data["carbon_credit_revenue_rwf"]
 
 def test_carbon_factor_ratio():
     """Verify that carbon credits earned reflect the 3.0x CO2e factor per ton of charcoal."""
@@ -96,15 +121,17 @@ def test_health_check_endpoint():
     assert len(data["data_sources"]) >= 2
 
 def test_model_info_endpoint():
-    """Verify statistical validation metrics endpoint returns RMSE, R2, and citations."""
+    """Observed-fuel classifier reports ROC-AUC, not a synthetic R-squared."""
     response = client.get("/api/v1/model/info")
     assert response.status_code == 200
     data = response.json()
-    assert "test_rmse" in data or "model_type" in data
-    assert "feature_importances" in data or "model_type" in data
+    assert "roc_auc" in data
+    assert data["roc_auc"] > 0.5
+    assert "observed" in data["target"]
+    assert "does not predict subsidy" in data["methodology"].lower()
 
-def test_forecast_confidence_intervals():
-    """Verify forecast includes 95% uncertainty confidence intervals."""
+def test_forecast_scenario_band():
+    """Forecast band is ordered. It is a scenario band, not a confidence interval."""
     payload = {"subsidy_percentage": 40.0, "target_districts": []}
     response = client.post("/api/v1/simulate/subsidy", json=payload)
     assert response.status_code == 200
