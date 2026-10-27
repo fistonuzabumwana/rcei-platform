@@ -58,9 +58,14 @@ function App() {
   // Cloud server cold-start booting state
   const [isServerBooting, setIsServerBooting] = useState(false)
   const [bootAttemptCount, setBootAttemptCount] = useState(1)
+  const [bootStatus, setBootStatus] = useState<'booting' | 'failed'>('booting')
+  const [isBootPinging, setIsBootPinging] = useState(false)
+  const MAX_BOOT_ATTEMPTS = 8
 
   // Track simulation request sequencing to prevent slower auto-runs or preset calls from overwriting newer user runs
   const latestSimulationId = useRef<number>(0)
+  const bootGeneration = useRef(0)
+  const bootRetryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Handler for user simulation runs (increments sequence ID so any prior inflight run is discarded)
   const handleUserSimulationComplete = (result: any) => {
@@ -69,48 +74,88 @@ function App() {
     if (result) setShowTourBanner(false)
   }
 
-  const loadDataFromBackend = async (attempt = 1) => {
-    setBootAttemptCount(attempt)
-    
-    // Check if backend is waking up or already live
-    const health = await checkBackendHealth()
-    if (health === 'cold_starting' || health === 'error') {
-      if (attempt >= 8) {
-        setError(true)
-        setLoading(false)
-        setIsServerBooting(false)
-        return
+  const clearBootRetryTimeout = () => {
+    if (bootRetryTimeout.current) {
+      clearTimeout(bootRetryTimeout.current)
+      bootRetryTimeout.current = null
+    }
+  }
+
+  const scheduleBootRetry = (attempt: number, generation: number) => {
+    clearBootRetryTimeout()
+    bootRetryTimeout.current = setTimeout(() => {
+      if (bootGeneration.current === generation) {
+        loadDataFromBackend(attempt)
       }
+    }, 3500)
+  }
+
+  const loadDataFromBackend = async (attempt = 1) => {
+    const generation = bootGeneration.current
+    setBootAttemptCount(attempt)
+    setBootStatus('booting')
+    setIsServerBooting(true)
+    setIsBootPinging(true)
+    setError(false)
+
+    const failBoot = () => {
+      if (bootGeneration.current !== generation) return
+      setError(true)
+      setLoading(false)
+      setBootStatus('failed')
       setIsServerBooting(true)
-      setTimeout(() => {
-        loadDataFromBackend(attempt + 1)
-      }, 3500)
-      return
+      setIsBootPinging(false)
+      clearBootRetryTimeout()
     }
 
     try {
+      const health = await checkBackendHealth()
+      if (bootGeneration.current !== generation) return
+
+      if (health === 'cold_starting' || health === 'error') {
+        setIsBootPinging(false)
+        if (attempt >= MAX_BOOT_ATTEMPTS) {
+          failBoot()
+          return
+        }
+        scheduleBootRetry(attempt + 1, generation)
+        return
+      }
+
       const data = await fetchDistrictMetrics()
+      if (bootGeneration.current !== generation) return
       setMetrics(data)
       setLoading(false)
       setIsServerBooting(false)
+      setBootStatus('booting')
       setError(false)
+      setIsBootPinging(false)
+      clearBootRetryTimeout()
       fetchModelInfo().then(info => setModelInfo(info)).catch(console.warn)
     } catch {
-      if (attempt >= 8) {
-        setError(true)
-        setLoading(false)
-        setIsServerBooting(false)
+      if (bootGeneration.current !== generation) return
+      setIsBootPinging(false)
+      if (attempt >= MAX_BOOT_ATTEMPTS) {
+        failBoot()
         return
       }
       setIsServerBooting(true)
-      setTimeout(() => {
-        loadDataFromBackend(attempt + 1)
-      }, 3500)
+      scheduleBootRetry(attempt + 1, generation)
     }
+  }
+
+  const handleBootRetry = () => {
+    bootGeneration.current += 1
+    clearBootRetryTimeout()
+    loadDataFromBackend(1)
   }
 
   useEffect(() => {
     loadDataFromBackend(1)
+    return () => {
+      bootGeneration.current += 1
+      clearBootRetryTimeout()
+    }
   }, [])
 
 
@@ -220,15 +265,21 @@ function App() {
           </div>
           <div className="flex flex-row flex-wrap gap-2 items-center">
             <div className="hidden md:block"><ThemeToggle /></div>
-            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${error ? 'bg-red-500/10 border-red-500/30' : isServerBooting ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
-              {loading || isServerBooting ? (
+            <div className={`px-4 py-2 rounded-xl flex items-center space-x-2.5 transition-all bg-[var(--elevated-surface)] border border-[var(--card-border)] ${
+              error || bootStatus === 'failed'
+                ? 'bg-red-500/10 border-red-500/30'
+                : isServerBooting
+                  ? 'border-amber-500/40 bg-amber-500/5'
+                  : ''
+            }`}>
+              {bootStatus === 'failed' || error ? (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                </span>
+              ) : loading || isServerBooting ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                </span>
-              ) : error ? (
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
                 </span>
               ) : (
                 <span className="relative flex h-2.5 w-2.5">
@@ -237,9 +288,21 @@ function App() {
                 </span>
               )}
               <span className={`text-xs font-bold tracking-wider uppercase ${
-                isServerBooting ? 'text-amber-600 dark:text-amber-400' : loading ? 'text-amber-500' : error ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                bootStatus === 'failed' || error
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : isServerBooting || loading
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
               }`}>
-                {isServerBooting ? `Booting Server (Attempt #${bootAttemptCount})...` : loading ? 'Connecting...' : error ? 'Connection Error' : 'Live Cloud Connected'}
+                {bootStatus === 'failed'
+                  ? 'API unreachable'
+                  : isServerBooting
+                    ? `Starting API (${bootAttemptCount}/${MAX_BOOT_ATTEMPTS})...`
+                    : loading
+                      ? 'Connecting...'
+                      : error
+                        ? 'Connection Error'
+                        : 'Live Cloud Connected'}
               </span>
             </div>
             <div className="hidden md:flex items-center gap-2">
@@ -632,11 +695,13 @@ function App() {
         </div>
       )}
 
-      {/* Cloud Server Cold-Start Booting Notice */}
       <ServerBootingModal
         isOpen={isServerBooting}
         attemptCount={bootAttemptCount}
-        onRetry={() => loadDataFromBackend(bootAttemptCount + 1)}
+        maxAttempts={MAX_BOOT_ATTEMPTS}
+        status={bootStatus}
+        isPinging={isBootPinging}
+        onRetry={handleBootRetry}
       />
     </div>
   )
