@@ -17,6 +17,7 @@ Clean fuel is almost entirely among non-poor households: **7.06%** clean for non
 
 | Resource | URL |
 | :--- | :--- |
+| Demo video (screen recording) | [Google Drive video](https://docs.google.com/videos/d/1-6hXJuDeyGuPRFvjF4AF14Dn_c_eq1X5ppPNqJmLRy0/edit?usp=sharing) |
 | Frontend (Vercel) | [https://rcei-platform.vercel.app](https://rcei-platform.vercel.app) |
 | Frontend custom domain | [https://rwanda-cleanenergy-insights-nisr.fistonuz.me](https://rwanda-cleanenergy-insights-nisr.fistonuz.me) |
 | Backend (Render) | [https://rcei-backend.onrender.com](https://rcei-backend.onrender.com) |
@@ -51,9 +52,20 @@ A national 40% scenario at $15 converts **336,331** households, displaces **74,4
 | SAS 2024 livestock `s9q2` / `s9q4` | Households with at least 2 cattle |
 | SAS 2024 `s3_q20_1`–`s3_q20_7` | Plot harvest kilograms |
 
-### Getting the microdata
+### Submitted data artifact and microdata sources
 
-The raw `.dta` files are NISR-licensed and are not redistributed in this repository (`dataset/` is gitignored). The committed, inspectable artifact is `backend/app/data/processed/district_metrics.json`, and the API serves only that file. To re-run the pipeline, request the datasets from the [NISR Microdata Catalog](https://microdata.statistics.gov.rw/) and place them at these paths:
+**Submitted data file in this repository:** [`backend/app/data/processed/district_metrics.json`](backend/app/data/processed/district_metrics.json) (district-level rates the API serves). Classifier scores are in [`backend/app/core/model_metrics.json`](backend/app/core/model_metrics.json).
+
+Raw NISR `.dta` microdata is **not** redistributed here (`dataset/` is gitignored). The files are large (~4 GB) and access is through the [NISR Microdata Catalog](https://microdata.statistics.gov.rw/index.php/catalog). Register, log in, and use **Get Microdata** for each study. Official catalog entries and downloads:
+
+| Study | Reference ID | Catalog / download |
+| :--- | :--- | :--- |
+| Integrated Household Living Conditions Survey (EICV7), 2023–2024, Cross-Sectional Sample | `RWA-NISR-EICV7-2023-2024-v01` | [Catalog 119](https://microdata.statistics.gov.rw/index.php/catalog/119) · [Download](https://microdata.statistics.gov.rw/index.php/catalog/119/download/1083) |
+| Rwanda Population and Housing Census 2022 | `RWA-NISR-RPHC-2022-v0.1` | [Catalog 109](https://microdata.statistics.gov.rw/index.php/catalog/109) · [Download](https://microdata.statistics.gov.rw/index.php/catalog/109/download/1029) |
+| Integrated Household Living Conditions Survey (EICV5), 2016–2017, Cross-Sectional Sample | `RWA-NISR-EICV5-CS-2016-2017-V0.1` | [Catalog 82](https://microdata.statistics.gov.rw/index.php/catalog/82) · [Stata](https://microdata.statistics.gov.rw/index.php/catalog/82/download/794) · [SPSS](https://microdata.statistics.gov.rw/index.php/catalog/82/download/795) |
+| Agriculture Household Survey 2024 | `RWA-NISR-RAHS-2024-V0.1` | [Catalog 123](https://microdata.statistics.gov.rw/index.php/catalog/123) · [Download](https://microdata.statistics.gov.rw/index.php/catalog/123/download/1107) |
+
+Producer for all four: National Institute of Statistics of Rwanda (NISR), Ministry of Finance and Economic Planning. After download, place files at:
 
 | Dataset | Expected path |
 | :--- | :--- |
