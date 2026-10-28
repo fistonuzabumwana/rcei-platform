@@ -113,6 +113,10 @@ Out-of-range subsidy or carbon price returns 422. The response includes `provena
 
 ## Run locally
 
+Two options: native Node/Python, or Docker Compose.
+
+### Option 1 — Node.js and Python
+
 Node.js 18+ and Python 3.10–3.12.
 
 ```bash
@@ -131,7 +135,26 @@ npm install
 npm run dev
 ```
 
-The public frontend is on Vercel and the public API is on Render. Those links are in the table above. These local commands serve the same app at `http://localhost:5173`, with Swagger at `http://localhost:8000/docs`.
+App: `http://localhost:5173`. Swagger: `http://localhost:8000/docs`.
+
+### Option 2 — Docker Compose
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin). Uses the committed `district_metrics.json` and classifier pickle; raw NISR `.dta` files are not needed.
+
+```bash
+git clone https://github.com/fistonuzabumwana/rcei-platform.git
+cd rcei-platform
+docker compose up --build
+```
+
+| Service | URL |
+| :--- | :--- |
+| App (nginx + React) | [http://localhost:8080](http://localhost:8080) |
+| API / Swagger | [http://localhost:8000/docs](http://localhost:8000/docs) |
+
+The frontend container proxies `/api/v1` and `/health` to the backend container, so the browser stays on one origin. Stop with `Ctrl+C`, or `docker compose down`.
+
+The public frontend is on Vercel and the public API is on Render. Those links are in the table above.
 
 ## Team
 
