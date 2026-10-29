@@ -17,7 +17,7 @@ Clean fuel is almost entirely among non-poor households: **7.06%** clean for non
 
 | Resource | URL |
 | :--- | :--- |
-| Demo video (screen recording) | [Google Drive video](https://docs.google.com/videos/d/1-6hXJuDeyGuPRFvjF4AF14Dn_c_eq1X5ppPNqJmLRy0/edit?usp=sharing) |
+| Demo video (screen recording) | Online: [Google Drive](https://docs.google.com/videos/d/1mtFc9UP73isfODxrhFVvq_i6TJUnhKDYn-MIOcx_CrE/edit?usp=sharing) · In-repo: [`RCEI demo video.webm`](./RCEI%20demo%20video.webm) |
 | Frontend (Vercel) | [https://rcei-platform.vercel.app](https://rcei-platform.vercel.app) |
 | Frontend custom domain | [https://rwanda-cleanenergy-insights-nisr.fistonuz.me](https://rwanda-cleanenergy-insights-nisr.fistonuz.me) |
 | Backend (Render) | [https://rcei-backend.onrender.com](https://rcei-backend.onrender.com) |
