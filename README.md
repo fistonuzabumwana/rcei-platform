@@ -26,6 +26,7 @@ Clean fuel is almost entirely among non-poor households: **7.06%** clean for non
 | Methodology | [docs/EICV7_METHODOLOGY_REPORT.md](docs/EICV7_METHODOLOGY_REPORT.md) |
 | Data dictionary | [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) |
 | API reference | [docs/API_REFERENCE.md](docs/API_REFERENCE.md) |
+| Student ID cards (required) | [`Student ID card Adeline and Fiston.pdf`](./Student%20ID%20card%20Adeline%20and%20Fiston.pdf) |
 
 ## What the app does
 
@@ -160,6 +161,10 @@ The public frontend is on Vercel and the public API is on Render. Those links ar
 
 - **Adeline Tuyizere**: data, the classifier, scenario design and full-stack engineering
 - **Fiston Uzabumwana**: full-stack engineering, map, and deployment
+
+### Student identification (required)
+
+Hackathon rules require student ID cards for both team members. The submitted file is [`Student ID card Adeline and Fiston.pdf`](./Student%20ID%20card%20Adeline%20and%20Fiston.pdf).
 
 ## Intellectual property and declarations
 
